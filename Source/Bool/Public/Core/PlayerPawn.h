@@ -27,7 +27,11 @@ public:
 
 	//the input action for shooting the ball
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Inputsystem")
-	UInputAction* IA_ShootAction = nullptr;
+	UInputAction* IA_Shoot = nullptr;
+
+	//the input action for resetting the aim of the ball
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Inputsystem")
+	UInputAction* IA_ResetAim = nullptr;
 
 	//bool for checking if the cue ball trajectory is being set
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
@@ -39,7 +43,11 @@ public:
 
 	//the max speed at which the cue ball can be shot
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float MaxShootingSpeed = 4000;
+	float MaxShootingSpeed = 16000;
+
+	//the minimum speed at which the cue ball can be shot
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float MinimumShootingSpeed = 4000;
 
 	//the current speed at which the cue ball will be shot
 	UPROPERTY(BlueprintReadOnly)
@@ -69,9 +77,13 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ShootCueBall(const FInputActionValue& Value);
 
-	//input function for toggling the locking of the shoot trajectory
+	//function for resetting the aim for shooting the cue ball
 	UFUNCTION(BlueprintCallable)
-	void ToggleLockedShootingTrajectory(const FInputActionValue& Value);
+	void ResetAim(const FInputActionValue& Value);
+
+	//function for toggling the locking of the shoot trajectory
+	UFUNCTION(BlueprintCallable)
+	void ToggleLockedShootingTrajectory();
 
 	//function for getting the world position of the mouse cursor
 	UFUNCTION(BlueprintCallable)

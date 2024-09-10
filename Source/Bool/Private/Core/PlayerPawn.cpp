@@ -18,6 +18,9 @@ APlayerPawn::APlayerPawn()
 	//create the camera component
 	CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComponent"));
 
+	//setup attachment(s)
+	CameraComponent->SetupAttachment(RootComponent);
+
 	//set the rotation of the camera component
 	CameraComponent->SetRelativeRotation(FRotator(0,-90,0));
 }
@@ -48,7 +51,7 @@ void APlayerPawn::Tick(float DeltaTime)
 	else
 	{
 		//set the current shot speed
-		CurrentShotSpeed = FMath::Clamp(FVector::Dist(CurrentCueBall->GetActorLocation(), GetMouseWorldPosition()) * ShotSpeedMultiplier, 0, MaxShootingSpeed);
+		CurrentShotSpeed = FMath::Clamp(FVector::Dist(CurrentCueBall->GetActorLocation(), GetMouseWorldPosition()) * ShotSpeedMultiplier, MinimumShootingSpeed, MaxShootingSpeed);
 	}
 }
 
@@ -61,7 +64,8 @@ void APlayerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	//check if we have a valid input data asset and enhanced input component
 	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent); EnhancedInputComponent->IsValidLowLevel())
 	{
-		EnhancedInputComponent->BindAction(IA_ShootAction, ETriggerEvent::Triggered, this, &APlayerPawn::ShootCueBall);
+		EnhancedInputComponent->BindAction(IA_Shoot, ETriggerEvent::Triggered, this, &APlayerPawn::ShootCueBall);
+		EnhancedInputComponent->BindAction(IA_ResetAim, ETriggerEvent::Triggered, this, &APlayerPawn::ResetAim);
 	}
 
 	//check if we have a valid input subsystem
@@ -78,7 +82,7 @@ void APlayerPawn::ShootCueBall(const FInputActionValue& Value)
 	if (!bLockedShotTrajectory)
 	{
 		//toggle locking the shooting trajectory
-		ToggleLockedShootingTrajectory(Value);
+		ToggleLockedShootingTrajectory();
 
 		//return early to prevent further execution
 		return;
@@ -94,11 +98,17 @@ void APlayerPawn::ShootCueBall(const FInputActionValue& Value)
 		CurrentCueBall->SphereComponent->AddImpulse(Direction * CurrentShotSpeed, NAME_None, true);
 
 		//toggle locking the shooting trajectory
-		ToggleLockedShootingTrajectory(Value);
+		ToggleLockedShootingTrajectory();
 	}
 }
 
-void APlayerPawn::ToggleLockedShootingTrajectory(const FInputActionValue& Value)
+void APlayerPawn::ResetAim(const FInputActionValue& Value)
+{
+	//set the locket shot trajectory
+	bLockedShotTrajectory = false;
+}
+
+void APlayerPawn::ToggleLockedShootingTrajectory()
 {
 	//toggle the locked shot trajectory
 	bLockedShotTrajectory = !bLockedShotTrajectory;
