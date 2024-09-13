@@ -17,6 +17,9 @@ ACueBall::ACueBall()
 	//set the sphere component to be the root component
 	RootComponent = SphereComponent;
 
+	//setup attachment(s)
+	MeshComponent->SetupAttachment(RootComponent);
+
 	//set parameters for the sphere component
 	SphereComponent->InitSphereRadius(50.0f);
 	SphereComponent->SetCollisionProfileName(TEXT("Pawn"));
