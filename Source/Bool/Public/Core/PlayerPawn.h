@@ -14,9 +14,6 @@ class BOOL_API APlayerPawn : public APawn
 	GENERATED_BODY()
 
 public:
-
-	//class components
-
 	//the camera component for this pawn
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class UCameraComponent* CameraComponent = nullptr;
@@ -49,6 +46,26 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float MinimumShootingSpeed = 4000;
 
+	//the speed the balls velocity must be below before the player can shoot
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float BallStopSpeed = 50;
+
+	//whether or not the player can shoot right now
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bCanPlay = true;
+
+	//the default amount of turns the player has each round
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Turns/Rounds")
+	int TurnsPerRound = 5;
+
+	//the current turn
+	UPROPERTY(BlueprintReadOnly, Category="Turns/Rounds")
+	int CurrentTurn = 1;
+
+	//the amount of turns the player has left this round
+	UPROPERTY(BlueprintReadOnly, Category="Turns/Rounds")
+	int TurnsThisRound = 5;
+
 	//the current speed at which the cue ball will be shot
 	UPROPERTY(BlueprintReadOnly)
 	float CurrentShotSpeed = 0;
@@ -56,6 +73,10 @@ public:
 	//the current location the player is aiming from
 	UPROPERTY(BlueprintReadOnly)
 	FVector AimLocation = FVector::ZeroVector;
+
+	//whether or not a turn is currently in progress
+	UPROPERTY(BlueprintReadOnly)
+	bool bTurnInProgress = false;
 
 	//the current cue ball we're using
 	UPROPERTY(BlueprintReadOnly)
@@ -73,6 +94,10 @@ public:
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	//function to check if we can shoot
+	UFUNCTION(BlueprintCallable)
+	bool CanShoot() const;
+
 	//input function for shooting the cue ball
 	UFUNCTION(BlueprintCallable)
 	void ShootCueBall(const FInputActionValue& Value);
@@ -89,4 +114,21 @@ public:
 	UFUNCTION(BlueprintCallable)
 	FVector GetMouseWorldPosition();
 
+	//function called when the turn ends
+	UFUNCTION()
+	void OnTurnEnd();
+
+	//function called when the round ends
+	UFUNCTION()
+	void OnRoundEnd();
+
+	//blueprint events
+
+	//event called when the turn ends
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnTurnEndBP();
+
+	//event called when the round ends
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnRoundEndBP();
 };
