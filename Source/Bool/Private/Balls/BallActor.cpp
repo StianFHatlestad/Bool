@@ -31,7 +31,7 @@ ABallActor::ABallActor()
 	SphereComponent->SetLinearDamping(0.1f);
 	SphereComponent->SetAngularDamping(0.1f);
 	SphereComponent->SetEnableGravity(true);
-	SphereComponent->SetConstraintMode(EDOFMode::Type::XYPlane);
+	//SphereComponent->SetConstraintMode(EDOFMode::Type::XYPlane);
 	SphereComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	SphereComponent->SetCollisionProfileName(TEXT("BlockAllDynamic"));
 
