@@ -54,6 +54,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bCanPlay = true;
 
+	//the position on the ball that the player is going to hit
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FVector2D CueBallHitLocation = FVector2D::Zero();
+
 	//the default amount of turns the player has each round
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Turns/Rounds")
 	int TurnsPerRound = 5;
@@ -96,6 +100,18 @@ public:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	//function to set the current cue ball hit location
+	UFUNCTION(BlueprintCallable)
+	void SetCueBallHitLocation(FVector2D HitLocation);
+
+	//function to shoot the cue ball at a specific position
+	UFUNCTION()
+	void ShootCueBallAtPosition(FVector NewVelocity, FName BoneName);
+
+	//function to convert the fvector2d location to a point on the cue ball
+	UFUNCTION(BlueprintCallable)
+	FVector ConvertLocationToCueBall(FVector2D InLocation);
 
 	//function to check if we can shoot
 	UFUNCTION(BlueprintCallable)
