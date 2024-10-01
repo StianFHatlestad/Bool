@@ -106,6 +106,69 @@ void APlayerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	}
 }
 
+void APlayerPawn::SetCueBallHitLocation(FVector2D HitLocation)
+{
+	//set the cue ball hit location
+	CueBallHitLocation = HitLocation;
+
+	//call convert location to cue ball
+	ConvertLocationToCueBall(CueBallHitLocation);
+}
+
+void APlayerPawn::ShootCueBallAtPosition(FVector NewVelocity, FName BoneName)
+{
+	//convert the location to a point on the cue ball
+	FVector LocationToHit = ConvertLocationToCueBall(CueBallHitLocation);
+
+	//add impulse to the cue ball at the location
+	CurrentCueBall->SphereComponent->AddImpulseAtLocation(NewVelocity, LocationToHit, BoneName);
+}
+
+FVector APlayerPawn::ConvertLocationToCueBall(FVector2D InLocation)
+{
+	//direction from the aim location to the cue ball
+	FVector AimDirection = (CurrentCueBall->GetActorLocation() - AimLocation).GetSafeNormal();
+
+	//storage for the hit result
+	FHitResult HitResult;
+
+	//do a line trace to get the hit result
+	GetWorld()->LineTraceSingleByChannel(HitResult, AimLocation, AimLocation + AimDirection * 10000, ECC_Visibility);
+
+	//check if the hit result is not valid
+	if (!HitResult.IsValidBlockingHit())
+	{
+		//print a debug message
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("No Hit Result Found"));
+
+		//return early to prevent further execution
+		return FVector::ZeroVector;
+	}
+
+	
+	//get the x axis direction
+	FVector XAxisDirection = FVector::CrossProduct(AimDirection, FVector::UpVector).GetSafeNormal() * -1;
+
+	//storage for the x axis location
+	FVector XAxisLocation = CurrentCueBall->SphereComponent->GetScaledSphereRadius() * XAxisDirection * InLocation.X;
+
+	//get the y axis direction
+	FVector YAxisDirection = FVector::CrossProduct(AimDirection, FVector::RightVector).GetSafeNormal();
+
+	//storage for the y axis location
+	FVector YAxisLocation = CurrentCueBall->SphereComponent->GetScaledSphereRadius() * YAxisDirection * InLocation.Y;
+
+	////add in the x axis value
+	//ReturnValue += CurrentCueBall->SphereComponent->GetScaledSphereRadius() * cos(Latitude) * cos(Longitude) * FVector::ForwardVector;
+
+	//set the return value
+	FVector ReturnValue = CurrentCueBall->GetActorLocation() + XAxisLocation + YAxisLocation + HitResult.ImpactPoint - CurrentCueBall->GetActorLocation();
+
+	//return the return result
+	return ReturnValue;
+	
+}
+
 bool APlayerPawn::CanShoot() const
 {
 	//check if we have a valid cue ball
@@ -159,8 +222,11 @@ void APlayerPawn::ShootCueBall(const FInputActionValue& Value)
 		//get the direction to shoot the cue ball
 		const FVector Direction = (CurrentCueBall->GetActorLocation() - AimLocation).GetSafeNormal();
 
-		//shoot the cue ball
-		CurrentCueBall->SphereComponent->AddImpulse(Direction * CurrentShotSpeed, NAME_None, true);
+		//shoot the cue ball at the position
+		ShootCueBallAtPosition(Direction * CurrentShotSpeed, NAME_None);
+
+		////shoot the cue ball
+		//CurrentCueBall->SphereComponent->AddImpulse(Direction * CurrentShotSpeed, NAME_None, true);
 
 		//set turn in progress to true
 		bTurnInProgress = true;
