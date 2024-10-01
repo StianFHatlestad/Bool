@@ -24,16 +24,16 @@ ABallActor::ABallActor()
 	//setup attachment(s)
 	MeshComponent->SetupAttachment(RootComponent);
 
-	//set parameters for the sphere component
-	SphereComponent->InitSphereRadius(50.0f);
-	SphereComponent->SetCollisionProfileName(TEXT("Pawn"));
-	SphereComponent->SetSimulatePhysics(true);
-	SphereComponent->SetLinearDamping(0.1f);
-	SphereComponent->SetAngularDamping(0.1f);
-	SphereComponent->SetEnableGravity(true);
-	//SphereComponent->SetConstraintMode(EDOFMode::Type::XYPlane);
-	SphereComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	SphereComponent->SetCollisionProfileName(TEXT("BlockAllDynamic"));
+	////set parameters for the sphere component
+	//SphereComponent->InitSphereRadius(50.0f);
+	//SphereComponent->SetCollisionProfileName(TEXT("Pawn"));
+	//SphereComponent->SetSimulatePhysics(true);
+	//SphereComponent->SetLinearDamping(0.1f);
+	//SphereComponent->SetAngularDamping(0.1f);
+	//SphereComponent->SetEnableGravity(true);
+	////SphereComponent->SetConstraintMode(EDOFMode::Type::XYPlane);
+	//SphereComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	//SphereComponent->SetCollisionProfileName(TEXT("BlockAllDynamic"));
 
 	//bind the OnHit event
 	SphereComponent->OnComponentHit.AddDynamic(this, &ABallActor::OnSphereHit);
