@@ -86,6 +86,9 @@ public:
 	UPROPERTY()
 	APlayerController* PlayerController = nullptr;
 
+	//whether or not we've ended this turn
+	bool bHasEndedTurn = false;
+
 	//constructor(s)
 	APlayerPawn();
 

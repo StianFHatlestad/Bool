@@ -69,11 +69,19 @@ void APlayerPawn::Tick(float DeltaTime)
 	//check if the turn is in progress and we can shoot (all balls are stopped)
 	if (bTurnInProgress && CanShoot())
 	{
+		//set turn in progress to false
+		bTurnInProgress = false;
+
+		//set has ended turn to false
+		bHasEndedTurn = false;
+	}
+	else if (CanShoot() && !bHasEndedTurn)
+	{
+		//set has ended turn to true 
+		bHasEndedTurn = true;
+
 		//call the OnTurnEnd function
 		OnTurnEnd();
-
-		//set the turn in progress to false
-		bTurnInProgress = false;
 	}
 }
 
@@ -247,6 +255,9 @@ void APlayerPawn::OnTurnEnd()
 
 				//set the location of the cue ball back to the start position
 				CueBall->SetActorLocation(CueBall->StartPosition);
+
+				//set the velocity to zero
+				CueBall->SphereComponent->SetAllPhysicsLinearVelocity(FVector::Zero());
 			}
 		}
 	}
