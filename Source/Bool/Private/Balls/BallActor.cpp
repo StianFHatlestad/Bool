@@ -16,7 +16,7 @@ ABallActor::ABallActor()
 
 	//create the component(s)
 	SphereComponent = CreateDefaultSubobject<USphereComponent>(TEXT("Root"));
-	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
+	MeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Mesh"));
 
 	//set the sphere component to be the root component
 	RootComponent = SphereComponent;
@@ -46,6 +46,36 @@ void ABallActor::BeginPlay()
 
 	//set the start position
 	StartPosition = GetActorLocation();
+}
+
+void ABallActor::Tick(const float DeltaTime)
+{
+	//call the parent implementation
+	Super::Tick(DeltaTime);
+
+	//set the displacement
+	Displacement = GetActorLocation() - StartPosition;
+
+	////update the bool physics state
+	//UpdateBoolPhysicsState(DeltaTime);
+
+}
+
+void ABallActor::UpdateBoolPhysicsState(float DeltaTime)
+{
+	//check if velocity, angular velocity abd displacement are all zero
+	if (SphereComponent->GetComponentVelocity().IsNearlyZero() && SphereComponent->GetPhysicsAngularVelocityInDegrees().IsNearlyZero() && Displacement.IsNearlyZero())
+	{
+		//set the physics state to stationary
+		PhysicsState = Ebps_Stationary;
+
+		//return to prevent further execution
+		return;
+	}
+
+	//get the size of the ball
+	const float BallSize = SphereComponent->GetScaledSphereRadius();
+
 }
 
 void ABallActor::OnSphereHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)

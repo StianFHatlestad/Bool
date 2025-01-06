@@ -6,6 +6,15 @@
 #include "GameFramework/Actor.h"
 #include "BallActor.generated.h"
 
+UENUM()
+enum EBallPhysicsState
+{
+	Ebps_Stationary,
+	Ebps_Spinning,
+	Ebps_Rolling,
+	Ebps_Sliding,
+};
+
 UCLASS()
 class BOOL_API ABallActor : public AActor
 {
@@ -19,25 +28,39 @@ public:
 
 	//mesh component for visibilty
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	UStaticMeshComponent* MeshComponent;
+	USkeletalMeshComponent* MeshComponent;
+
+	//the current turn data for the ball
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Turns")
+	class UBallCurrentTurnData* CurrentTurnData;
 
 	//the upgrade data asset(s) for the ball
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Upgrade")
 	TArray<class UBallUpgradeDataAsset*> BallUpgradeDataAssets;
 
-	//whether or not the ball is in the goal
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Upgrade")
-	bool bInGoal = false;
-
 	//the start position of the ball
 	UPROPERTY(BlueprintReadOnly)
-	FVector StartPosition;
+	FVector StartPosition = FVector::ZeroVector;
+
+	//the displacement of the ball this frame
+	UPROPERTY(BlueprintReadOnly, Category="Physics")
+	FVector Displacement = FVector::ZeroVector;
+
+	//the current physics state of the ball
+	UPROPERTY(BlueprintReadOnly, Category = "Physics")
+	TEnumAsByte<EBallPhysicsState> PhysicsState = Ebps_Stationary;
 
 	//constructor(s)
 	ABallActor();
 
 	//overrides(s)
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaTime) override;
+
+	//function to check if the state of the ball should be updated
+	UFUNCTION(BlueprintCallable)
+	void UpdateBoolPhysicsState(float DeltaTime);
+
 
 	//function called when the ball is hit
 	UFUNCTION()

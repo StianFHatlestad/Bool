@@ -31,33 +31,33 @@ AGoalActor::AGoalActor()
 
 void AGoalActor::OnBoxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	//check if the other actor is a ball actor
-	if (OtherActor->IsA(ABallActor::StaticClass()))
-	{
-		//get the ball actor
-		ABallActor* BallActor = Cast<ABallActor>(OtherActor);
+	////check if the other actor is a ball actor
+	//if (OtherActor->IsA(ABallActor::StaticClass()))
+	//{
+	//	//get the ball actor
+	//	ABallActor* BallActor = Cast<ABallActor>(OtherActor);
 
-		//set the ball actor's sphere to no longer be constrained
-		BallActor->SphereComponent->SetConstraintMode(EDOFMode::Type::None);
+	//	//set the ball actor's sphere to no longer be constrained
+	//	BallActor->SphereComponent->SetConstraintMode(EDOFMode::Type::None);
 
-		////print debug message to the screen
-		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Ball in goal!"));
-	}
+	//	////print debug message to the screen
+	//	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Ball in goal!"));
+	//}
 }
 
 void AGoalActor::OnBoxEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	//check if the other actor is a ball actor
-	if (OtherActor->IsA(ABallActor::StaticClass()))
-	{
-		//get the ball actor
-		ABallActor* BallActor = Cast<ABallActor>(OtherActor);
+	////check if the other actor is a ball actor
+	//if (OtherActor->IsA(ABallActor::StaticClass()))
+	//{
+	//	//get the ball actor
+	//	ABallActor* BallActor = Cast<ABallActor>(OtherActor);
 
-		//set the ball actor's sphere to be constrained to the XY plane
-		BallActor->SphereComponent->SetConstraintMode(EDOFMode::Type::XYPlane);
+	//	//set the ball actor's sphere to be constrained to the XY plane
+	//	BallActor->SphereComponent->SetConstraintMode(EDOFMode::Type::XYPlane);
 
-		////print debug message to the screen
-		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Ball out of goal!"));
-	}
+	//	////print debug message to the screen
+	//	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Ball out of goal!"));
+	//}
 }
 

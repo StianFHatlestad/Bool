@@ -5,6 +5,7 @@
 #include "EnhancedInputComponent.h"
 #include "Balls/BallUpgradeDataAsset.h"
 #include "Balls/CueBall.h"
+#include "Balls/BallCurrentTurnData.h"
 #include "Bool/GoalActor.h"
 #include "EnhancedInput/Public/EnhancedInputSubsystems.h"
 #include "Camera/CameraComponent.h"
@@ -37,7 +38,7 @@ void APlayerPawn::BeginPlay()
 	PlayerController = CastChecked<APlayerController>(GetController());
 
 	//get the cue ball
-	CurrentCueBall = Cast<ACueBall>(UGameplayStatics::GetActorOfClass(GetWorld(), ACueBall::StaticClass()));
+	CueBall = Cast<ABallActor>(UGameplayStatics::GetActorOfClass(GetWorld(), CueBallClass));
 
 	//set the player controller input mode
 	PlayerController->SetInputMode(FInputModeGameAndUI());
@@ -63,25 +64,17 @@ void APlayerPawn::Tick(float DeltaTime)
 	else
 	{
 		//set the current shot speed
-		CurrentShotSpeed = FMath::Clamp(FVector::Dist(CurrentCueBall->GetActorLocation(), GetMouseWorldPosition()) * ShotSpeedMultiplier, MinimumShootingSpeed, MaxShootingSpeed);
+		CurrentShotSpeed = FMath::Clamp(FVector::Dist(CueBall->GetActorLocation(), GetMouseWorldPosition()) * ShotSpeedMultiplier, MinimumShootingSpeed, MaxShootingSpeed);
 	}
 
 	//check if the turn is in progress and we can shoot (all balls are stopped)
 	if (bTurnInProgress && CanShoot())
 	{
-		//set turn in progress to false
-		bTurnInProgress = false;
-
-		//set has ended turn to false
-		bHasEndedTurn = false;
-	}
-	else if (CanShoot() && !bHasEndedTurn)
-	{
-		//set has ended turn to true 
-		bHasEndedTurn = true;
-
 		//call the OnTurnEnd function
 		OnTurnEnd();
+
+		//set turn in progress to false
+		bTurnInProgress = false;
 	}
 }
 
@@ -121,13 +114,13 @@ void APlayerPawn::ShootCueBallAtPosition(FVector NewVelocity, FName BoneName)
 	FVector LocationToHit = ConvertLocationToCueBall(CueBallHitLocation);
 
 	//add impulse to the cue ball at the location
-	CurrentCueBall->SphereComponent->AddImpulseAtLocation(NewVelocity, LocationToHit, BoneName);
+	CueBall->SphereComponent->AddVelocityChangeImpulseAtLocation(NewVelocity, LocationToHit, BoneName);
 }
 
 FVector APlayerPawn::ConvertLocationToCueBall(FVector2D InLocation)
 {
 	//direction from the aim location to the cue ball
-	FVector AimDirection = (CurrentCueBall->GetActorLocation() - AimLocation).GetSafeNormal();
+	FVector AimDirection = (CueBall->GetActorLocation() - FVector(AimLocation.X, AimLocation.Y, CueBall->GetActorLocation().Z)).GetSafeNormal();
 
 	//storage for the hit result
 	FHitResult HitResult;
@@ -150,19 +143,19 @@ FVector APlayerPawn::ConvertLocationToCueBall(FVector2D InLocation)
 	FVector XAxisDirection = FVector::CrossProduct(AimDirection, FVector::UpVector).GetSafeNormal() * -1;
 
 	//storage for the x axis location
-	FVector XAxisLocation = CurrentCueBall->SphereComponent->GetScaledSphereRadius() * XAxisDirection * InLocation.X;
+	FVector XAxisLocation = CueBall->SphereComponent->GetScaledSphereRadius() * XAxisDirection * InLocation.X;
 
 	//get the y axis direction
 	FVector YAxisDirection = FVector::CrossProduct(AimDirection, FVector::RightVector).GetSafeNormal();
 
 	//storage for the y axis location
-	FVector YAxisLocation = CurrentCueBall->SphereComponent->GetScaledSphereRadius() * YAxisDirection * InLocation.Y;
+	FVector YAxisLocation = CueBall->SphereComponent->GetScaledSphereRadius() * YAxisDirection * InLocation.Y;
 
 	////add in the x axis value
 	//ReturnValue += CurrentCueBall->SphereComponent->GetScaledSphereRadius() * cos(Latitude) * cos(Longitude) * FVector::ForwardVector;
 
 	//set the return value
-	FVector ReturnValue = CurrentCueBall->GetActorLocation() + XAxisLocation + YAxisLocation + HitResult.ImpactPoint - CurrentCueBall->GetActorLocation();
+	FVector ReturnValue = CueBall->GetActorLocation() + XAxisLocation + YAxisLocation + HitResult.ImpactPoint - CueBall->GetActorLocation();
 
 	//return the return result
 	return ReturnValue;
@@ -171,8 +164,22 @@ FVector APlayerPawn::ConvertLocationToCueBall(FVector2D InLocation)
 
 bool APlayerPawn::CanShoot() const
 {
+	////check if the turn is in progress
+	//if (bTurnInProgress)
+	//{
+	//	//return false
+	//	return false;
+	//}
+
 	//check if we have a valid cue ball
-	if (!CurrentCueBall)
+	if (!CueBall)
+	{
+		//return false
+		return false;
+	}
+
+	//check if enough time hasn't passed since last turn
+	if (GetWorld()->GetTimeSeconds() < AvailableTurnTime)
 	{
 		//return false
 		return false;
@@ -193,14 +200,21 @@ bool APlayerPawn::CanShoot() const
 		}
 	}
 
+	//check if the cue ball actors' physics linear velocity is greater than the ball stop speed
+	if (CueBall->SphereComponent->GetComponentVelocity().Size() > BallStopSpeed)
+	{
+		//return false
+		return false;
+	}
+
 	//return true
 	return true;
 }
 
 void APlayerPawn::ShootCueBall(const FInputActionValue& Value)
 {
-	//check if there is a turn in progress or if we're not allowed to play
-	if (bTurnInProgress || !bCanPlay)
+	//check if there is a turn in progress or if we're not allowed to play or if we can't shoot given current conditions
+	if (bTurnInProgress || !bCanPlay || !CanShoot())
 	{
 		//return early to prevent further execution
 		return;
@@ -217,10 +231,10 @@ void APlayerPawn::ShootCueBall(const FInputActionValue& Value)
 	}
 
 	//check if we have a valid cue ball
-	if (CurrentCueBall)
+	if (CueBall)
 	{
 		//get the direction to shoot the cue ball
-		const FVector Direction = (CurrentCueBall->GetActorLocation() - AimLocation).GetSafeNormal();
+		const FVector Direction = (CueBall->GetActorLocation() - AimLocation).GetSafeNormal();
 
 		//shoot the cue ball at the position
 		ShootCueBallAtPosition(Direction * CurrentShotSpeed, NAME_None);
@@ -230,6 +244,9 @@ void APlayerPawn::ShootCueBall(const FInputActionValue& Value)
 
 		//set turn in progress to true
 		bTurnInProgress = true;
+
+		//set the next available turn time
+		AvailableTurnTime = GetWorld()->GetTimeSeconds() + MinTurnTime;
 
 		//toggle locking the shooting trajectory
 		ToggleLockedShootingTrajectory();
@@ -264,9 +281,9 @@ FVector APlayerPawn::GetMouseWorldPosition()
 	FVector TrueWorldLocation = WorldLocation.Z / WorldDirection.Z * WorldDirection * -1 + WorldLocation;
 
 	//check if we have a valid cue ball
-	if (CurrentCueBall->IsValidLowLevelFast())
+	if (CueBall->IsValidLowLevelFast())
 	{
-		TrueWorldLocation.Z = CurrentCueBall->GetActorLocation().Z;
+		TrueWorldLocation.Z = CueBall->GetActorLocation().Z;
 	}
 
 	//return the world location
@@ -309,21 +326,34 @@ void APlayerPawn::OnTurnEnd()
 			}
 
 			//check if the object is not a cueball
-			if (!Ball->IsA(ACueBall::StaticClass()))
+			if (!Ball->IsA(CueBallClass))
 			{
+				//check if the ball has a current turn data
+				if (Ball->CurrentTurnData)
+				{
+					//add the score to the player score
+					PlayerScore += Ball->CurrentTurnData->ScoreToGive;
+
+					//add the gold to the player gold
+					PlayerGold += Ball->CurrentTurnData->GoldToGive;
+				}
+
 				//destroy the ball actor
 				Ball->Destroy();
 			}
 			else
 			{
 				//get the cue ball
-				ACueBall* CueBall = Cast<ACueBall>(Ball);
+				ABallActor* LocCueBall = Cast<ABallActor>(Ball);
 
 				//set the location of the cue ball back to the start position
-				CueBall->SetActorLocation(CueBall->StartPosition);
+				LocCueBall->SetActorLocation(LocCueBall->StartPosition);
 
-				//set the velocity to zero
-				CueBall->SphereComponent->SetAllPhysicsLinearVelocity(FVector::Zero());
+				//set the linear velocity to zero
+				LocCueBall->SphereComponent->SetAllPhysicsLinearVelocity(FVector::Zero());
+
+				//set the angular velocity to zero
+				LocCueBall->SphereComponent->SetAllPhysicsAngularVelocityInRadians(FVector::Zero());
 			}
 		}
 	}

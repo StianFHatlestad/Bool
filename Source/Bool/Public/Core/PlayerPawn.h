@@ -6,7 +6,10 @@
 #include "GameFramework/Pawn.h"
 #include "InputMappingContext.h"
 #include "InputAction.h"
+#include "Balls/CueBall.h"
 #include "PlayerPawn.generated.h"
+
+class ABallActor;
 
 UCLASS()
 class BOOL_API APlayerPawn : public APawn
@@ -30,44 +33,68 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Inputsystem")
 	UInputAction* IA_ResetAim = nullptr;
 
+	//the class of the cue ball
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Bool")
+	TSubclassOf<ABallActor> CueBallClass = ACueBall::StaticClass();
+
 	//bool for checking if the cue ball trajectory is being set
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Bool")
 	bool bLockedShotTrajectory = false;
 
 	//the shot speed multipler
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Bool")
 	float ShotSpeedMultiplier = 2;
 
 	//the max speed at which the cue ball can be shot
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Bool")
 	float MaxShootingSpeed = 16000;
 
 	//the minimum speed at which the cue ball can be shot
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Bool")
 	float MinimumShootingSpeed = 4000;
 
 	//the speed the balls velocity must be below before the player can shoot
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Bool")
 	float BallStopSpeed = 50;
 
 	//whether or not the player can shoot right now
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Bool")
 	bool bCanPlay = true;
 
 	//the position on the ball that the player is going to hit
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Bool")
 	FVector2D CueBallHitLocation = FVector2D::Zero();
 
 	//the default amount of turns the player has each round
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Turns/Rounds")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Bool|Turns/Rounds")
 	int TurnsPerRound = 5;
 
+	//the minimum time a turn must last (in seconds)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Bool|Turns/Rounds")
+	float MinTurnTime = .5;
+
+	//the current amount of score the player has
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Bool|Score")
+	int PlayerScore = 0;
+
+	//the current amount of gold the player has
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bool|Score")
+	int PlayerGold = 0;
+
+	//the friction coefficient of the table
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bool|Physics")
+	float TableFrictionCoefficient = 0.6;
+
+	//the next time a turn can be performed
+	UPROPERTY(BlueprintReadOnly, Category="Bool|Turns/Rounds")
+	float AvailableTurnTime = 0;
+
 	//the current turn
-	UPROPERTY(BlueprintReadOnly, Category="Turns/Rounds")
+	UPROPERTY(BlueprintReadOnly, Category="Bool|Turns/Rounds")
 	int CurrentTurn = 1;
 
 	//the amount of turns the player has left this round
-	UPROPERTY(BlueprintReadOnly, Category="Turns/Rounds")
+	UPROPERTY(BlueprintReadOnly, Category="Bool|Turns/Rounds")
 	int TurnsThisRound = 5;
 
 	//the current speed at which the cue ball will be shot
@@ -84,7 +111,7 @@ public:
 
 	//the current cue ball we're using
 	UPROPERTY(BlueprintReadOnly)
-	class ACueBall* CurrentCueBall = nullptr;
+	class ABallActor* CueBall = nullptr;
 
 	//reference to the player controller
 	UPROPERTY()
