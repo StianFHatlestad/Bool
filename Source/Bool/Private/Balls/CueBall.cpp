@@ -9,3 +9,12 @@ ACueBall::ACueBall()
 	//PrimaryActorTick.bCanEverTick = true;
 }
 
+void ACueBall::BeginPlay()
+{
+	//call the parent implementation
+	Super::BeginPlay();
+
+	//set the start position
+	StartPosition = GetActorLocation();
+}
+

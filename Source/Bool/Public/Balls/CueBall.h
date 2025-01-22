@@ -14,7 +14,14 @@ class BOOL_API ACueBall : public ABallActor
 	
 public:
 
+	//the start position of the ball
+	UPROPERTY(BlueprintReadOnly)
+	FVector StartPosition = FVector::ZeroVector;
+
 	//constructor(s)
 	ACueBall();
 
+
+	//override(s)
+	virtual void BeginPlay() override;
 };
