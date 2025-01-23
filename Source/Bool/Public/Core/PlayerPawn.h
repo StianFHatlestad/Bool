@@ -19,87 +19,75 @@ class BOOL_API APlayerPawn : public APawn
 public:
 	//the camera component for this pawn
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	class UCameraComponent* CameraComponent = nullptr;
+	TObjectPtr<class UCameraComponent> CameraComponent = nullptr;
 
 	//the input mapping context for this pawn
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Inputsystem")
-	UInputMappingContext* InputMappingContext = nullptr;
+	TObjectPtr<UInputMappingContext> InputMappingContext = nullptr;
 
 	//the input action for shooting the ball
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Inputsystem")
-	UInputAction* IA_Shoot = nullptr;
+	TObjectPtr<UInputAction> IA_Shoot = nullptr;
 
 	//the input action for resetting the aim of the ball
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Inputsystem")
-	UInputAction* IA_ResetAim = nullptr;
+	TObjectPtr<UInputAction> IA_ResetAim = nullptr;
 
 	//the class of the cue ball
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Bool")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="BoolData")
 	TSubclassOf<ABallActor> CueBallClass = ACueBall::StaticClass();
 
 	//bool for checking if the cue ball trajectory is being set
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Bool")
+	UPROPERTY(BlueprintReadOnly, Category="BoolData")
 	bool bLockedShotTrajectory = false;
 
 	//the shot speed multipler
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Bool")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="BoolData")
 	float ShotSpeedMultiplier = 2;
 
 	//the max speed at which the cue ball can be shot
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Bool")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="BoolData")
 	float MaxShootingSpeed = 16000;
 
 	//the minimum speed at which the cue ball can be shot
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Bool")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="BoolData")
 	float MinimumShootingSpeed = 4000;
 
-	//the speed the balls velocity must be below before the player can shoot
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Bool")
-	float BallStopSpeed = 50;
-
 	//whether or not the player can shoot right now
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Bool")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="BoolData")
 	bool bCanPlay = true;
 
 	//the position on the ball that the player is going to hit
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Bool")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="BoolData")
 	FVector2D CueBallHitLocation = FVector2D::Zero();
 
 	//the default amount of turns the player has each round
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Bool|Turns/Rounds")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="BoolData|Turns/Rounds")
 	int TurnsPerRound = 5;
 
 	//the minimum time a turn must last (in seconds)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Bool|Turns/Rounds")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="BoolData|Turns/Rounds")
 	float MinTurnTime = .5;
 
 	//the current amount of score the player has
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Bool|Score")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="BoolData|Score")
 	int PlayerScore = 0;
 
 	//the current amount of gold the player has
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bool|Score")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Score")
 	int PlayerGold = 0;
 
-	//the friction coefficient of the table
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bool|Physics")
-	float TableFrictionCoefficient = 0.6;
-
 	//the next time a turn can be performed
-	UPROPERTY(BlueprintReadOnly, Category="Bool|Turns/Rounds")
+	UPROPERTY(BlueprintReadOnly, Category="BoolData|Turns/Rounds")
 	float AvailableTurnTime = 0;
 
 	//the current turn
-	UPROPERTY(BlueprintReadOnly, Category="Bool|Turns/Rounds")
+	UPROPERTY(BlueprintReadOnly, Category="BoolData|Turns/Rounds")
 	int CurrentTurn = 1;
 
 	//the amount of turns the player has left this round
-	UPROPERTY(BlueprintReadOnly, Category="Bool|Turns/Rounds")
+	UPROPERTY(BlueprintReadOnly, Category="BoolData|Turns/Rounds")
 	int TurnsThisRound = 5;
-
-	//the current speed at which the cue ball will be shot
-	UPROPERTY(BlueprintReadOnly)
-	float CurrentShotSpeed = 0;
 
 	//the current location the player is aiming from
 	UPROPERTY(BlueprintReadOnly)
@@ -111,11 +99,11 @@ public:
 
 	//the current cue ball we're using
 	UPROPERTY(BlueprintReadOnly)
-	class ABallActor* CueBall = nullptr;
+	TObjectPtr<ACueBall> CueBall = nullptr;
 
 	//reference to the player controller
 	UPROPERTY()
-	APlayerController* PlayerController = nullptr;
+	TObjectPtr<APlayerController> PlayerController = nullptr;
 
 	//whether or not we've ended this turn
 	bool bHasEndedTurn = false;
@@ -128,17 +116,17 @@ public:
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	//function to shoot the cue ball at a specific position
+	UFUNCTION()
+	void ShootCueBallAtPosition(FVector NewVelocity, FName BoneName) const;
+
 	//function to set the current cue ball hit location
 	UFUNCTION(BlueprintCallable)
 	void SetCueBallHitLocation(FVector2D HitLocation);
 
-	//function to shoot the cue ball at a specific position
-	UFUNCTION()
-	void ShootCueBallAtPosition(FVector NewVelocity, FName BoneName);
-
 	//function to convert the fvector2d location to a point on the cue ball
 	UFUNCTION(BlueprintCallable)
-	FVector ConvertLocationToCueBall(FVector2D InLocation);
+	FVector ConvertLocationToCueBall(FVector2D InLocation) const;
 
 	//function to check if we can shoot
 	UFUNCTION(BlueprintCallable)
@@ -152,13 +140,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ResetAim(const FInputActionValue& Value);
 
-	//function for toggling the locking of the shoot trajectory
-	UFUNCTION(BlueprintCallable)
-	void ToggleLockedShootingTrajectory();
-
 	//function for getting the world position of the mouse cursor
 	UFUNCTION(BlueprintCallable)
-	FVector GetMouseWorldPosition();
+	FVector GetMouseWorldPosition() const;
 
 	//function called when the turn ends
 	UFUNCTION()

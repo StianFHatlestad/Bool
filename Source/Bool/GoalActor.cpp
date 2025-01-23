@@ -2,11 +2,7 @@
 
 
 #include "GoalActor.h"
-
-#include "Balls/BallActor.h"
-#include "Balls/BallUpgradeDataAsset.h"
 #include "Components/BoxComponent.h"
-#include "Components/SphereComponent.h"
 
 
 AGoalActor::AGoalActor()
