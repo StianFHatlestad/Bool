@@ -291,6 +291,59 @@ FVector APlayerPawn::GetMouseWorldPosition() const
 	return TrueWorldLocation;
 }
 
+bool APlayerPawn::HandleBallInGoal(AGoalActor* Goal, AActor* BallActor)
+{
+	////check if the ball actor is valid
+	//if (!BallActor->IsValidLowLevelFast() || (BallActor->StaticClass() != ABallActor::StaticClass() && BallActor->StaticClass() != ACueBall::StaticClass()))
+	//{
+	//	//return early to prevent further execution
+	//	return false;
+	//}
+
+	//get the ball actor
+	TObjectPtr<ABallActor> Ball = Cast<ABallActor>(BallActor);
+
+	//iterate through the ball upgrade data assets
+	for (const TObjectPtr<UBallUpgradeDataAsset> BallUpgradeDataAsset : Ball->BallUpgradeDataAssets)
+	{
+		//call the OnGoalHit function
+		BallUpgradeDataAsset->OnGoal(Ball, Goal);
+	}
+
+	//check if the object is not a cueball
+	if (!Ball->IsA(CueBallClass))
+	{
+		//check if the ball has a current turn data
+		if (Ball->CurrentTurnData)
+		{
+			//add the score to the player score
+			PlayerScore += Ball->CurrentTurnData->ScoreToGive;
+
+			//add the gold to the player gold
+			PlayerGold += Ball->CurrentTurnData->GoldToGive;
+		}
+
+		//destroy the ball actor
+		Ball->Destroy();
+	}
+	else
+	{
+		//get the cue ball
+		const TObjectPtr<ACueBall> LocCueBall = Cast<ACueBall>(Ball);
+
+		//set the location of the cue ball back to the start position
+		LocCueBall->SetActorLocation(LocCueBall->StartPosition);
+
+		//set the linear velocity to zero
+		LocCueBall->SphereComponent->SetAllPhysicsLinearVelocity(FVector::Zero());
+
+		//set the angular velocity to zero
+		LocCueBall->SphereComponent->SetAllPhysicsAngularVelocityInRadians(FVector::Zero());
+	}
+
+	return true;
+}
+
 void APlayerPawn::OnTurnEnd()
 {
 	//add on screen debug message
@@ -316,53 +369,7 @@ void APlayerPawn::OnTurnEnd()
 		//iterate through the ball actors
 		for (TObjectPtr<AActor>BallActor : BallActors)
 		{
-			//check if the ball actor is valid
-			if (!BallActor->IsValidLowLevelFast() || (BallActor->StaticClass() != ABallActor::StaticClass() && BallActor->StaticClass() != ACueBall::StaticClass()))
-			{
-				//return early to prevent further execution
-				return;
-			}
-
-			//get the ball actor
-			TObjectPtr<ABallActor> Ball = Cast<ABallActor>(BallActor);
-
-			//iterate through the ball upgrade data assets
-			for (const TObjectPtr<UBallUpgradeDataAsset> BallUpgradeDataAsset : Ball->BallUpgradeDataAssets)
-			{
-				//call the OnGoalHit function
-				BallUpgradeDataAsset->OnGoal(Ball, Goal);
-			}
-
-			//check if the object is not a cueball
-			if (!Ball->IsA(CueBallClass))
-			{
-				//check if the ball has a current turn data
-				if (Ball->CurrentTurnData)
-				{
-					//add the score to the player score
-					PlayerScore += Ball->CurrentTurnData->ScoreToGive;
-
-					//add the gold to the player gold
-					PlayerGold += Ball->CurrentTurnData->GoldToGive;
-				}
-
-				//destroy the ball actor
-				Ball->Destroy();
-			}
-			else
-			{
-				//get the cue ball
-				const TObjectPtr<ACueBall> LocCueBall = Cast<ACueBall>(Ball);
-
-				//set the location of the cue ball back to the start position
-				LocCueBall->SetActorLocation(LocCueBall->StartPosition);
-
-				//set the linear velocity to zero
-				LocCueBall->SphereComponent->SetAllPhysicsLinearVelocity(FVector::Zero());
-
-				//set the angular velocity to zero
-				LocCueBall->SphereComponent->SetAllPhysicsAngularVelocityInRadians(FVector::Zero());
-			}
+			if (HandleBallInGoal(Goal, BallActor)) return;
 		}
 	}
 
