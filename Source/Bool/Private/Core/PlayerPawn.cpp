@@ -369,7 +369,7 @@ void APlayerPawn::OnTurnEnd()
 		//iterate through the ball actors
 		for (TObjectPtr<AActor>BallActor : BallActors)
 		{
-			if (HandleBallInGoal(Goal, BallActor)) return;
+			HandleBallInGoal(Goal, BallActor);
 		}
 	}
 
