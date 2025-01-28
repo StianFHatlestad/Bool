@@ -40,11 +40,11 @@ public:
 
 	//function for when the ball is hit by another ball(not the cue ball)
 	UFUNCTION(BlueprintImplementableEvent)
-	void OnNormalBallHit(ABallActor* BallActor, UPrimitiveComponent* HitComponent, ABallActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+	void OnNormalBallHit(ABallActor* BallActor, ABallActor* OtherActor, const FHitResult& Hit);
 
 	//function for when the ball is hit by the cue ball
 	UFUNCTION(BlueprintImplementableEvent)
-	void OnCueBallHit(ABallActor* BallActor, UPrimitiveComponent* HitComponent, ACueBall* CueBall, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+	void OnCueBallHit(ABallActor* BallActor, ACueBall* CueBall, const FHitResult& Hit);
 
 	//function for when the goes into a hole
 	UFUNCTION(BlueprintImplementableEvent)

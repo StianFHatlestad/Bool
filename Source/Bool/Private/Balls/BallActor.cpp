@@ -8,6 +8,7 @@
 #include "Balls/BallUpgradeDataAsset.h"
 #include "Balls/CueBall.h"
 #include "Components/SphereComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 
 ABallActor::ABallActor()
@@ -38,6 +39,20 @@ ABallActor::ABallActor()
 
 	//bind the OnHit event
 	SphereComponent->OnComponentHit.AddDynamic(this, &ABallActor::OnSphereHit);
+	SphereComponent->OnComponentBeginOverlap.AddDynamic(this, &ABallActor::OnSphereOverlap);
+}
+
+void ABallActor::UpdateOldVelocities()
+{
+	//add the old velocity
+	OldVelocities.Add(CurrentVelocity);
+
+	//check if we have more than 10 old velocities
+	if (OldVelocities.Num() > 10)
+	{
+		//remove the first element
+		OldVelocities.RemoveAt(0);
+	}
 }
 
 void ABallActor::Tick(const float DeltaTime)
@@ -48,6 +63,9 @@ void ABallActor::Tick(const float DeltaTime)
 	//check if we're not using custom physics
 	if (!bUseCustomPhysics)
 	{
+		//update the old velocities
+		UpdateOldVelocities();
+
 		//return early to prevent further execution
 		return;
 	}
@@ -64,21 +82,51 @@ void ABallActor::Tick(const float DeltaTime)
 	//update the bool physics variables
 	UpdatePhysicsVariables(DeltaTime);
 
-	//add the old velocity
-	OldVelocities.Add(CurrentVelocity);
-
-	//check if we have more than 10 old velocities
-	if (OldVelocities.Num() > 10)
-	{
-		//remove the first element
-		OldVelocities.RemoveAt(0);
-	}
+	//update the old velocity
+	UpdateOldVelocities();
 
 	//check if we're not using custom collision response
-	if (bUseCustomCollisionResponse)
+	if (!bUseCustomCollisionResponse)
 	{
-		//move the component
-		SphereComponent->MoveComponent(GetVelocity() * DeltaTime,SphereComponent->GetComponentRotation(), true);
+		//return early to prevent further execution
+		return;
+	}
+
+	//get all actors with the ignore collision tag
+	TArray<AActor*> ActorsToIgnore;
+	UGameplayStatics::GetAllActorsWithTag(GetWorld(), ActorTagToIgnore, ActorsToIgnore);
+
+	//iterate over the actors to ignore
+	for (AActor* ActorToIgnore : ActorsToIgnore)
+	{
+		//ignore the actor
+		SphereComponent->IgnoreActorWhenMoving(ActorToIgnore, true);
+	}
+
+	//storage for the hit result
+	FHitResult Hit;
+
+	//storage for the delta velocity
+	DeltaVelocity = GetBallVelocity() * DeltaTime;
+
+	//check if the delta velocity is near 0
+	if (DeltaVelocity.IsNearlyZero() && bDebugMode)
+	{
+		//print debug statement
+		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 0.f, FColor::Blue, "DeltaVelocity Is Zero");
+
+		//return early to prevent further execution
+		return;
+	}
+
+	//move the component
+	SphereComponent->MoveComponent(GetBallVelocity() * DeltaTime, SphereComponent->GetComponentRotation(), true, &Hit);
+
+	//check if we hit anything
+	if (Hit.IsValidBlockingHit() && bDebugMode)
+	{
+		//print the name of the actor
+		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5.f, FColor::Blue, Hit.GetActor()->GetActorNameOrLabel());
 	}
 }
 
@@ -179,13 +227,13 @@ void ABallActor::UpdatePhysicsVariables(const float DeltaTime)
 		case Ebps_Rolling:
 		{
 			//get the linear velocity magnitude
-			const float VelocityMagnitute = GetVelocity().Size() - TableRollingFrictionCoefficient * (-GetWorld()->GetGravityZ() / 100) * DeltaTime;
+			const float VelocityMagnitute = GetBallVelocity().Size() - TableRollingFrictionCoefficient * (-GetWorld()->GetGravityZ() / 100) * DeltaTime;
 
 			//set the velocity
-			SetBallVelocity(GetVelocity().GetSafeNormal() * VelocityMagnitute);
+			SetBallVelocity(GetBallVelocity().GetSafeNormal() * VelocityMagnitute);
 
 			//set the angular velocity variable
-			SetBallAngularVelocity(FVector(0, GetVelocity().X / SphereComponent->GetScaledSphereRadius(), AngularVelocity.Z - 5 * TableRollingFrictionCoefficient * (-GetWorld()->GetGravityZ() / 100) * DeltaTime / (2 * SphereComponent->GetScaledSphereRadius())));
+			SetBallAngularVelocity(FVector(0, GetBallVelocity().X / SphereComponent->GetScaledSphereRadius(), AngularVelocity.Z - 5 * TableRollingFrictionCoefficient * (-GetWorld()->GetGravityZ() / 100) * DeltaTime / (2 * SphereComponent->GetScaledSphereRadius())));
 
 			//break
 			break;
@@ -197,10 +245,10 @@ void ABallActor::UpdatePhysicsVariables(const float DeltaTime)
 			const float WorldGravityZ = -GetWorld()->GetGravityZ() / 100;
 
 			//set the velocity
-			SetBallVelocity(GetVelocity() - TableSlidingFrictionCoefficient * WorldGravityZ * DeltaTime * InitialRelativeVelocity.GetSafeNormal());
+			SetBallVelocity(GetBallVelocity() - TableSlidingFrictionCoefficient * WorldGravityZ * DeltaTime * InitialRelativeVelocity.GetSafeNormal());
 
 			//update the initial relative velocity
-			InitialRelativeVelocity = GetVelocity() - 2 / 7 * TableSlidingFrictionCoefficient * WorldGravityZ * DeltaTime * InitialRelativeVelocity.GetSafeNormal();
+			InitialRelativeVelocity = GetBallVelocity() - 2 / 7 * TableSlidingFrictionCoefficient * WorldGravityZ * DeltaTime * InitialRelativeVelocity.GetSafeNormal();
 
 			//set the angular velocity variable
 			SetBallAngularVelocity(FVector(
@@ -231,10 +279,10 @@ void ABallActor::SetBoolPhysicsState(const TEnumAsByte<EBallPhysicsState> NewPhy
 bool ABallActor::SolveStationaryBallMovingBallCollision(const FHitResult& Hit, const TObjectPtr<ABallActor> OtherBallActor)
 {
 	//get the angle between the velocities of the 2 balls
-	const float Angle = FMath::Acos(FVector::DotProduct(GetVelocity().GetSafeNormal(), OtherBallActor->CurrentVelocity.GetSafeNormal()));
+	const float Angle = FMath::Acos(FVector::DotProduct(GetBallVelocity().GetSafeNormal(), OtherBallActor->CurrentVelocity.GetSafeNormal()));
 
 	//storage for the old velocity
-	FVector OldVelocity = GetVelocity();
+	FVector OldVelocity = GetBallVelocity();
 
 	//check if we have any old velocities
 	if (OldVelocities.Num() > 0)
@@ -277,72 +325,85 @@ bool ABallActor::SolveStationaryBallMovingBallCollision(const FHitResult& Hit, c
 	return true;
 }
 
-void ABallActor::OnSphereHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+bool ABallActor::ProcessBallHit(AActor* OtherActor, const FHitResult& Hit)
 {
-	////check if the normal impulse is not straight down
-	//if (OtherActor->IsA(StaticClass()))
-	//{
-	//	//debug storage
-	//	const std::string debugstring2 = std::to_string(FVector::DotProduct(Hit.Normal.GetSafeNormal(), FVector(0,0,1)));
-
-	//	//print debug message
-	//	GEngine->AddOnScreenDebugMessage(-1,2, FColor::Red, FString("Hit Detected, Normal Impulse: ") + Hit.Normal.ToString() + " , " + debugstring2.c_str());
-	//}
-
-	//check if the other actor is a ball actor
-	if (OtherActor->IsA(StaticClass()))
+	//check if the other actor is not a ball actor
+	if (!OtherActor->IsA(StaticClass()))
 	{
-		//check if the other actor is a cue ball
-		if (OtherActor->IsA(ACueBall::StaticClass()))
+		//return false
+		return false;
+	}
+
+	//check if the other actor is a cue ball
+	if (OtherActor->IsA(ACueBall::StaticClass()))
+	{
+		//get the cue ball
+		const TObjectPtr<ACueBall> CueBall = Cast<ACueBall>(OtherActor);
+
+		//loop through the ball upgrade data assets
+		for (const TObjectPtr<UBallUpgradeDataAsset> BallUpgradeDataAsset : BallUpgradeDataAssets)
 		{
-			//get the cue ball
-			const TObjectPtr<ACueBall> CueBall = Cast<ACueBall>(OtherActor);
-
-			//loop through the ball upgrade data assets
-			for (const TObjectPtr<UBallUpgradeDataAsset> BallUpgradeDataAsset : BallUpgradeDataAssets)
-			{
-				//call the OnCueBallHit function
-				BallUpgradeDataAsset->OnCueBallHit(this, HitComponent, CueBall, OtherComp, NormalImpulse, Hit);
-			}
-		}
-		else
-		{
-			//get the other ball actor
-			const TObjectPtr<ABallActor> OtherBallActor = Cast<ABallActor>(OtherActor);
-
-			//loop through the ball upgrade data assets
-			for (const TObjectPtr<UBallUpgradeDataAsset> BallUpgradeDataAsset : BallUpgradeDataAssets)
-			{
-				//call the OnNormalBallHit function
-				BallUpgradeDataAsset->OnNormalBallHit(this, HitComponent, OtherBallActor, OtherComp, NormalImpulse, Hit);
-			}
-		}
-
-		//check if we're not using custom collision response
-		if (!bUseCustomCollisionResponse)
-		{
-			//return early to prevent further execution
-			return;
-		}
-
-		//get the other ball actor
-		const TObjectPtr<ABallActor> OtherBallActor = Cast<ABallActor>(OtherActor);
-
-		//check if the other ball is stationary
-		if (/*OtherBallActor->SphereComponent->GetPhysicsLinearVelocity().Length() <= StationarySpeed*/ OtherBallActor->IsBallStationary())
-		{
-			//solve for stationary against moving ball collision
-			SolveStationaryBallMovingBallCollision(Hit, OtherBallActor);
+			//call the OnCueBallHit function
+			BallUpgradeDataAsset->OnCueBallHit(this, CueBall, Hit);
 		}
 	}
 	else
 	{
+		//get the other ball actor
+		const TObjectPtr<ABallActor> OtherBallActor = Cast<ABallActor>(OtherActor);
+
 		//loop through the ball upgrade data assets
-		for (UBallUpgradeDataAsset* BallUpgradeDataAsset : BallUpgradeDataAssets)
+		for (const TObjectPtr<UBallUpgradeDataAsset> BallUpgradeDataAsset : BallUpgradeDataAssets)
 		{
-			//call the OnWallHit function
-			BallUpgradeDataAsset->OnWallHit(this, HitComponent, Hit);
+			//call the OnNormalBallHit function
+			BallUpgradeDataAsset->OnNormalBallHit(this, OtherBallActor, Hit);
 		}
+	}
+
+	//check if we're not using custom collision response
+	if (!bUseCustomCollisionResponse)
+	{
+		//return early to prevent further execution
+		return true;
+	}
+
+	//check if the other ball is stationary
+	if (const TObjectPtr<ABallActor> OtherBallActor = Cast<ABallActor>(OtherActor); OtherBallActor->IsBallStationary())
+	{
+		//solve for stationary against moving ball collision
+		SolveStationaryBallMovingBallCollision(Hit, OtherBallActor);
+	}
+
+	//return true
+	return true;
+}
+
+void ABallActor::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	//process the hit as if it was a ball hit
+	ProcessBallHit(OtherActor, SweepResult);
+
+	////create a debug circle
+	//DrawDebugSphere(GetWorld(), SweepResult.Location, SphereComponent->GetScaledSphereRadius(), 16, FColor::Yellow, true, 5);
+
+	////print an on screen debug message
+	//GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5, FColor::Blue, OtherActor->GetActorNameOrLabel());
+}
+
+void ABallActor::OnSphereHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+	//check if the other actor is a ball actor
+	if (ProcessBallHit(OtherActor, Hit))
+	{
+		//return early to prevent further execution
+		return;
+	};
+
+	//loop through the ball upgrade data assets
+	for (UBallUpgradeDataAsset* BallUpgradeDataAsset : BallUpgradeDataAssets)
+	{
+		//call the OnWallHit function
+		BallUpgradeDataAsset->OnWallHit(this, HitComponent, Hit);
 	}
 }
 

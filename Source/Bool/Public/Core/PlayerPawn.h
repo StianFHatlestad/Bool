@@ -7,6 +7,7 @@
 #include "InputMappingContext.h"
 #include "InputAction.h"
 #include "Balls/CueBall.h"
+#include "Bool/GoalActor.h"
 #include "PlayerPawn.generated.h"
 
 class ABallActor;
@@ -74,7 +75,7 @@ public:
 	int PlayerScore = 0;
 
 	//the current amount of gold the player has
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Score")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Gold")
 	int PlayerGold = 0;
 
 	//the next time a turn can be performed
@@ -104,9 +105,6 @@ public:
 	//reference to the player controller
 	UPROPERTY()
 	TObjectPtr<APlayerController> PlayerController = nullptr;
-
-	//whether or not we've ended this turn
-	bool bHasEndedTurn = false;
 
 	//constructor(s)
 	APlayerPawn();
@@ -143,6 +141,9 @@ public:
 	//function for getting the world position of the mouse cursor
 	UFUNCTION(BlueprintCallable)
 	FVector GetMouseWorldPosition() const;
+
+	UFUNCTION(BlueprintCallable)
+	bool HandleBallInGoal(AGoalActor* Goal, AActor* BallActor);
 
 	//function called when the turn ends
 	UFUNCTION()

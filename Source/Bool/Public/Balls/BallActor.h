@@ -96,11 +96,23 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BoolData|Physics")
 	FVector CurrentVelocity = FVector::ZeroVector;
 
+	//storage for the deltavelocity
+	UPROPERTY(BlueprintReadOnly, Category = "BoolData|Physics")
+	FVector DeltaVelocity = FVector::ZeroVector;
+
+
+	//the actor tag to ignore when checking for collisions
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics")
+	FName ActorTagToIgnore = "IgnoreCol";
+
 	//constructor(s)
 	ABallActor();
 
 	//overrides(s)
 	virtual void Tick(float DeltaTime) override;
+
+	//function to update the old velocities
+	void UpdateOldVelocities();
 
 	//function to check if the state of the ball should be updated
 	UFUNCTION(BlueprintCallable)
@@ -114,8 +126,15 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetBoolPhysicsState(TEnumAsByte<EBallPhysicsState> NewPhysicsState);
 
-	//function to solve a stationary ball against moving ball collision
+	//function to solve the physics of a stationary ball against moving ball collision
 	bool SolveStationaryBallMovingBallCollision(const FHitResult& Hit, TObjectPtr<ABallActor> OtherBallActor);
+
+	//function to process a ball hit and call the appropriate event(s)
+	bool ProcessBallHit(AActor* OtherActor, const FHitResult& Hit);
+
+	//function called when the ball overlaps with another actor
+	UFUNCTION()
+	void OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	//function called when the ball is hit
 	UFUNCTION()
