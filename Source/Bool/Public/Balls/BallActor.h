@@ -6,6 +6,8 @@
 #include "GameFramework/Actor.h"
 #include "BallActor.generated.h"
 
+class UBallUpgradeDataAsset;
+
 UENUM(BlueprintType)
 enum EBallPhysicsState
 {
@@ -38,7 +40,7 @@ public:
 
 	//the upgrade data asset(s) for the ball
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BoolData|Upgrade")
-	TArray<class UBallUpgradeDataAsset*> BallUpgradeDataAssets;
+	TArray<TSubclassOf<UBallUpgradeDataAsset>> BallUpgradeDataAssets;
 
 	//the angular velocity of the ball
 	UPROPERTY(BlueprintReadOnly, Category = "BoolData|Physics")

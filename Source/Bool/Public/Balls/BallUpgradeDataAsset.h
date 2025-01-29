@@ -7,7 +7,6 @@
 #include "BallUpgradeDataAsset.generated.h"
 
 class AGoalActor;
-class ACueBall;
 class ABallActor;
 /**
  * Data asset for a handling ball upgrades
@@ -44,7 +43,7 @@ public:
 
 	//function for when the ball is hit by the cue ball
 	UFUNCTION(BlueprintImplementableEvent)
-	void OnCueBallHit(ABallActor* BallActor, ACueBall* CueBall, const FHitResult& Hit);
+	void OnCueBallHit(ABallActor* BallActor, ABallActor* CueBall, const FHitResult& Hit);
 
 	//function for when the goes into a hole
 	UFUNCTION(BlueprintImplementableEvent)
