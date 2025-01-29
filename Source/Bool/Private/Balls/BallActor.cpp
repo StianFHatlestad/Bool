@@ -3,10 +3,7 @@
 
 #include "Balls/BallActor.h"
 
-#include <string>
-
 #include "Balls/BallUpgradeDataAsset.h"
-#include "Balls/CueBall.h"
 #include "Components/SphereComponent.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -335,16 +332,16 @@ bool ABallActor::ProcessBallHit(AActor* OtherActor, const FHitResult& Hit)
 	}
 
 	//check if the other actor is a cue ball
-	if (OtherActor->IsA(ACueBall::StaticClass()))
+	if (OtherActor->IsA(StaticClass()))
 	{
 		//get the cue ball
-		const TObjectPtr<ACueBall> CueBall = Cast<ACueBall>(OtherActor);
+		const TObjectPtr<ABallActor> CueBall = Cast<ABallActor>(OtherActor);
 
 		//loop through the ball upgrade data assets
-		for (const TObjectPtr<UBallUpgradeDataAsset> BallUpgradeDataAsset : BallUpgradeDataAssets)
+		for (const auto BallUpgradeDataAsset : BallUpgradeDataAssets)
 		{
 			//call the OnCueBallHit function
-			BallUpgradeDataAsset->OnCueBallHit(this, CueBall, Hit);
+			BallUpgradeDataAsset.Get()->GetDefaultObject<UBallUpgradeDataAsset>()->OnCueBallHit(this, CueBall, Hit);
 		}
 	}
 	else
@@ -353,10 +350,10 @@ bool ABallActor::ProcessBallHit(AActor* OtherActor, const FHitResult& Hit)
 		const TObjectPtr<ABallActor> OtherBallActor = Cast<ABallActor>(OtherActor);
 
 		//loop through the ball upgrade data assets
-		for (const TObjectPtr<UBallUpgradeDataAsset> BallUpgradeDataAsset : BallUpgradeDataAssets)
+		for (const auto BallUpgradeDataAsset : BallUpgradeDataAssets)
 		{
 			//call the OnNormalBallHit function
-			BallUpgradeDataAsset->OnNormalBallHit(this, OtherBallActor, Hit);
+			BallUpgradeDataAsset.Get()->GetDefaultObject<UBallUpgradeDataAsset>()->OnNormalBallHit(this, OtherBallActor, Hit);
 		}
 	}
 
@@ -381,7 +378,61 @@ bool ABallActor::ProcessBallHit(AActor* OtherActor, const FHitResult& Hit)
 void ABallActor::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	//process the hit as if it was a ball hit
-	ProcessBallHit(OtherActor, SweepResult);
+	if(ProcessBallHit(OtherActor, SweepResult)) return;
+
+	//loop through the ball upgrade data assets
+	for (const auto BallUpgradeDataAsset : BallUpgradeDataAssets)
+	{
+		//call the OnWallHit function
+		BallUpgradeDataAsset.Get()->GetDefaultObject<UBallUpgradeDataAsset>()->OnWallHit(this, OverlappedComponent, SweepResult);
+	}
+
+	//check if we're not using custom collision response
+	if (!bUseCustomCollisionResponse)
+	{
+		//return early to prevent further execution
+		return;
+	}
+
+	//get the angle between the velocities of the 2 balls
+	const float Angle = FMath::Acos(FVector::DotProduct(GetBallVelocity().GetSafeNormal(), SweepResult.Normal));
+
+	//storage for the old velocity
+	FVector OldVelocity = GetBallVelocity();
+
+	//check if we have any old velocities
+	if (OldVelocities.Num() > 0)
+	{
+		//set the old velocity to the last element in the array
+		OldVelocity = OldVelocities.Last();
+	}
+
+	//get the direction from this ball to the other ball
+	const FVector DirectionVec = (SweepResult.Location - SphereComponent->GetComponentLocation()).GetSafeNormal();
+
+	//get our new velocity
+	const FVector OurNewVel = -SweepResult.Normal * (OldVelocity * FMath::Cos(Angle)) * OldVelocity.GetSafeNormal();
+
+	//get the other balls new velocity
+	const FVector OtherBallNewVel = -SweepResult.Normal * (OldVelocity * FMath::Sin(Angle)) * DirectionVec * StationaryCollisionMultiplier;
+
+	//check if we're in debug mode
+	if (bDebugMode) 
+	{
+		//Draw a debug sphere at the location of the hit
+		DrawDebugSphere(GetWorld(), SweepResult.Location, SphereComponent->GetScaledSphereRadius(), 16, FColor::Blue, false, 5);
+	}
+
+	//check if the new velocities are valid
+	if (!FTransform(OurNewVel).IsValid() || ! FTransform(OtherBallNewVel).IsValid())
+	{
+		//return early
+		return;
+	}
+
+	//set the new velocities
+	//SetBallVelocity(OurNewVel);
+	SetBallVelocity(OtherBallNewVel);
 
 	////create a debug circle
 	//DrawDebugSphere(GetWorld(), SweepResult.Location, SphereComponent->GetScaledSphereRadius(), 16, FColor::Yellow, true, 5);
@@ -399,12 +450,60 @@ void ABallActor::OnSphereHit(UPrimitiveComponent* HitComponent, AActor* OtherAct
 		return;
 	};
 
-	//loop through the ball upgrade data assets
-	for (UBallUpgradeDataAsset* BallUpgradeDataAsset : BallUpgradeDataAssets)
-	{
-		//call the OnWallHit function
-		BallUpgradeDataAsset->OnWallHit(this, HitComponent, Hit);
-	}
+	////loop through the ball upgrade data assets
+	//for (UBallUpgradeDataAsset* BallUpgradeDataAsset : BallUpgradeDataAssets)
+	//{
+	//	//call the OnWallHit function
+	//	BallUpgradeDataAsset->OnWallHit(this, HitComponent, Hit);
+	//}
+
+	////check if we're not using custom collision response
+	//if (!bUseCustomCollisionResponse)
+	//{
+	//	//return early to prevent further execution
+	//	return;
+	//}
+
+	////get the angle between the velocities of the 2 balls
+	//const float Angle = FMath::Acos(FVector::DotProduct(GetBallVelocity().GetSafeNormal(), Hit.Normal));
+
+	////storage for the old velocity
+	//FVector OldVelocity = GetBallVelocity();
+
+	////check if we have any old velocities
+	//if (OldVelocities.Num() > 0)
+	//{
+	//	//set the old velocity to the last element in the array
+	//	OldVelocity = OldVelocities.Last();
+	//}
+
+	////get the direction from this ball to the other ball
+	//const FVector DirectionVec = (Hit.Location - SphereComponent->GetComponentLocation()).GetSafeNormal();
+
+	////get our new velocity
+	//const FVector OurNewVel = -Hit.Normal * (OldVelocity * FMath::Cos(Angle)) * OldVelocity.GetSafeNormal();
+
+	////get the other balls new velocity
+	//const FVector OtherBallNewVel = -Hit.Normal * (OldVelocity * FMath::Sin(Angle)) * DirectionVec * StationaryCollisionMultiplier;
+
+	////check if we're in debug mode
+	//if (bDebugMode) 
+	//{
+	//	//Draw a debug sphere at the location of the hit
+	//	DrawDebugSphere(GetWorld(), Hit.Location, SphereComponent->GetScaledSphereRadius(), 16, FColor::Blue, false, 5);
+	//}
+
+	////check if the new velocities are valid
+	//if (!FTransform(OurNewVel).IsValid() || ! FTransform(OtherBallNewVel).IsValid())
+	//{
+	//	//return early
+	//	return;
+	//}
+
+	////set the new velocities
+	////SetBallVelocity(OurNewVel);
+	//SetBallVelocity(OtherBallNewVel);
+
 }
 
 FVector ABallActor::GetBallVelocity() const

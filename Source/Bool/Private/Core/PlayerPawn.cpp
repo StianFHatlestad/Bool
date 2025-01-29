@@ -3,8 +3,8 @@
 #include "InputMappingContext.h"
 #include "InputAction.h"
 #include "EnhancedInputComponent.h"
+#include "Balls/BallActor.h"
 #include "Balls/BallUpgradeDataAsset.h"
-#include "Balls/CueBall.h"
 #include "Balls/BallCurrentTurnData.h"
 #include "Bool/GoalActor.h"
 #include "EnhancedInput/Public/EnhancedInputSubsystems.h"
@@ -35,11 +35,25 @@ void APlayerPawn::BeginPlay()
 	//call the parent implementation
 	Super::BeginPlay();
 
-	//get the player controller
+	//set the player controller
 	PlayerController = CastChecked<APlayerController>(GetController());
 
-	//get the cue ball
-	CueBall = Cast<ACueBall>(UGameplayStatics::GetActorOfClass(GetWorld(), CueBallClass));
+	//get the cue balls in the level
+	TArray<AActor*> CueBalls;
+	UGameplayStatics::GetAllActorsOfClassWithTag(GetWorld(), ABallActor::StaticClass(), CueBallTag, CueBalls);
+
+	//check if we don't have any cue balls
+	if (CueBalls.IsEmpty())
+	{
+		//print a debug message
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("No Cue Balls Found"));
+
+		//return early to prevent further execution
+		return;
+	}
+
+	//set the cue ball
+	CueBall = Cast<ABallActor>(CueBalls[0]);
 
 	//set the player controller input mode
 	PlayerController->SetInputMode(FInputModeGameAndUI());
@@ -49,6 +63,9 @@ void APlayerPawn::BeginPlay()
 
 	//set the turns this round to the default turns per round
 	TurnsThisRound = TurnsPerRound;
+
+	//set the start location of the cue ball
+	CueBallStartLocation = CueBall->GetActorLocation();
 }
 
 void APlayerPawn::Tick(const float DeltaTime)
@@ -99,18 +116,11 @@ void APlayerPawn::ShootCueBallAtPosition(FVector NewVelocity, const FName BoneNa
 	//convert the location to a point on the cue ball
 	const FVector LocationToHit = ConvertLocationToCueBall(CueBallHitLocation);
 
-	////add impulse to the cue ball at the location
-	//CueBall->SphereComponent->AddVelocityChangeImpulseAtLocation(NewVelocity, LocationToHit, BoneName);
-
 	//calculate the world center of mass
 	const Chaos::FVec3 WorldCOM = CueBall->SphereComponent->GetComponentLocation() + CueBall->SphereComponent->GetComponentRotation().RotateVector(CueBall->SphereComponent->GetCenterOfMass());
 
 	//calculate the angular impulse
 	const Chaos::FVec3 AngularImpulse = Chaos::FVec3::CrossProduct(LocationToHit - WorldCOM, NewVelocity);
-
-	////add the impulse to the cue ball
-	//CueBall->SphereComponent->AddImpulse(NewVelocity);
-	//CueBall->SphereComponent->AddAngularImpulseInRadians(AngularImpulse);
 
 	//add the impulse to the cue ball
 	CueBall->SetBallVelocity(NewVelocity);
@@ -304,14 +314,14 @@ bool APlayerPawn::HandleBallInGoal(AGoalActor* Goal, AActor* BallActor)
 	TObjectPtr<ABallActor> Ball = Cast<ABallActor>(BallActor);
 
 	//iterate through the ball upgrade data assets
-	for (const TObjectPtr<UBallUpgradeDataAsset> BallUpgradeDataAsset : Ball->BallUpgradeDataAssets)
+	for (const auto BallUpgradeDataAsset : Ball->BallUpgradeDataAssets)
 	{
 		//call the OnGoalHit function
-		BallUpgradeDataAsset->OnGoal(Ball, Goal);
+		BallUpgradeDataAsset.Get()->GetDefaultObject<UBallUpgradeDataAsset>()->OnGoal(Ball, Goal);
 	}
 
 	//check if the object is not a cueball
-	if (!Ball->IsA(CueBallClass))
+	if (!Ball->ActorHasTag(CueBallTag))
 	{
 		//check if the ball has a current turn data
 		if (Ball->CurrentTurnData)
@@ -329,10 +339,10 @@ bool APlayerPawn::HandleBallInGoal(AGoalActor* Goal, AActor* BallActor)
 	else
 	{
 		//get the cue ball
-		const TObjectPtr<ACueBall> LocCueBall = Cast<ACueBall>(Ball);
+		const TObjectPtr<ABallActor> LocCueBall = Cast<ABallActor>(Ball);
 
 		//set the location of the cue ball back to the start position
-		LocCueBall->SetActorLocation(LocCueBall->StartPosition);
+		LocCueBall->SetActorLocation(CueBallStartLocation);
 
 		//set the linear velocity to zero
 		LocCueBall->SphereComponent->SetAllPhysicsLinearVelocity(FVector::Zero());
@@ -369,6 +379,7 @@ void APlayerPawn::OnTurnEnd()
 		//iterate through the ball actors
 		for (TObjectPtr<AActor>BallActor : BallActors)
 		{
+			//call the HandleBallInGoal function
 			HandleBallInGoal(Goal, BallActor);
 		}
 	}

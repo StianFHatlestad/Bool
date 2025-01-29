@@ -6,7 +6,6 @@
 #include "GameFramework/Pawn.h"
 #include "InputMappingContext.h"
 #include "InputAction.h"
-#include "Balls/CueBall.h"
 #include "Bool/GoalActor.h"
 #include "PlayerPawn.generated.h"
 
@@ -34,9 +33,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Inputsystem")
 	TObjectPtr<UInputAction> IA_ResetAim = nullptr;
 
-	//the class of the cue ball
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="BoolData")
-	TSubclassOf<ABallActor> CueBallClass = ACueBall::StaticClass();
+	//the tag for the cue ball
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData")
+	FName CueBallTag = FName("CueBallTag");
 
 	//bool for checking if the cue ball trajectory is being set
 	UPROPERTY(BlueprintReadOnly, Category="BoolData")
@@ -100,11 +99,15 @@ public:
 
 	//the current cue ball we're using
 	UPROPERTY(BlueprintReadOnly)
-	TObjectPtr<ACueBall> CueBall = nullptr;
+	TObjectPtr<ABallActor> CueBall = nullptr;
 
 	//reference to the player controller
 	UPROPERTY()
 	TObjectPtr<APlayerController> PlayerController = nullptr;
+
+	//the start location of the cue ball
+	UPROPERTY(BlueprintReadOnly)
+	FVector CueBallStartLocation = FVector::ZeroVector;
 
 	//constructor(s)
 	APlayerPawn();
