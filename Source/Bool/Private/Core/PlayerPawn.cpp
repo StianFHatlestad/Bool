@@ -202,7 +202,7 @@ bool APlayerPawn::CanShoot() const
 	for (TObjectPtr<AActor> BallActor : BallActors)
 	{
 		//check if the physics linear velocity is greater than the ball stop speed
-		if (Cast<ABallActor>(BallActor)->SphereComponent->GetComponentVelocity().Size() > CueBall->StationarySpeed)
+		if (Cast<ABallActor>(BallActor)->GetBallVelocity().Size() > CueBall->StationarySpeed)
 		{
 			//return false
 			return false;
@@ -210,7 +210,7 @@ bool APlayerPawn::CanShoot() const
 	}
 
 	//check if the cue ball actors' physics linear velocity is greater than the ball stop speed
-	if (CueBall->SphereComponent->GetComponentVelocity().Size() > CueBall->StationarySpeed)
+	if (CueBall->GetBallVelocity().Size() > CueBall->StationarySpeed)
 	{
 		//return false
 		return false;
@@ -303,15 +303,18 @@ FVector APlayerPawn::GetMouseWorldPosition() const
 
 bool APlayerPawn::HandleBallInGoal(AGoalActor* Goal, AActor* BallActor)
 {
-	////check if the ball actor is valid
-	//if (!BallActor->IsValidLowLevelFast() || (BallActor->StaticClass() != ABallActor::StaticClass() && BallActor->StaticClass() != ACueBall::StaticClass()))
-	//{
-	//	//return early to prevent further execution
-	//	return false;
-	//}
+	//check if the ball actor is not valid or if the ball actor is not a ball actor
+	if (!BallActor->IsValidLowLevelFast() || !BallActor->IsA(ABallActor::StaticClass()))
+	{
+		//print the static class to the screen
+		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5.f, FColor::Red, ABallActor::StaticClass()->GetName());
+
+		//return early to prevent further execution
+		return false;
+	}
 
 	//get the ball actor
-	TObjectPtr<ABallActor> Ball = Cast<ABallActor>(BallActor);
+	const TObjectPtr<ABallActor> Ball = Cast<ABallActor>(BallActor);
 
 	//iterate through the ball upgrade data assets
 	for (const auto BallUpgradeDataAsset : Ball->BallUpgradeDataAssets)
