@@ -2,7 +2,11 @@
 
 
 #include "GoalActor.h"
+
+#include "Balls/BallActor.h"
 #include "Components/BoxComponent.h"
+#include "Core/PlayerPawn.h"
+#include "Kismet/GameplayStatics.h"
 
 
 AGoalActor::AGoalActor()
@@ -27,33 +31,47 @@ AGoalActor::AGoalActor()
 
 void AGoalActor::OnBoxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	////check if the other actor is a ball actor
-	//if (OtherActor->IsA(ABallActor::StaticClass()))
-	//{
-	//	//get the ball actor
-	//	ABallActor* BallActor = Cast<ABallActor>(OtherActor);
+	//check if the other actor is a ball actor
+	if (OtherActor->IsA(ABallActor::StaticClass()))
+	{
+		//get the ball actor
+		ABallActor* BallActor = Cast<ABallActor>(OtherActor);
 
-	//	//set the ball actor's sphere to no longer be constrained
-	//	BallActor->SphereComponent->SetConstraintMode(EDOFMode::Type::None);
+		//get the player pawns in the world
+		TArray<AActor*> PlayerPawns;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), APlayerPawn::StaticClass(), PlayerPawns);
 
-	//	////print debug message to the screen
-	//	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Ball in goal!"));
-	//}
+		//cast the first player pawn
+		APlayerPawn* PlayerPawn = Cast<APlayerPawn>(PlayerPawns[0]);
+
+		//check if the playerpawn is not valid
+		if (!PlayerPawn->IsValidLowLevelFast())
+		{
+			//print a debug message
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("No PlayerPawn Found"));
+
+			//return early to prevent further execution
+			return;
+		}
+
+		//check if the ball is a cue ball
+		if (BallActor->ActorHasTag(PlayerPawn->CueBallTag))
+		{
+			//set the cue balls velocity to zero
+			BallActor->SetBallVelocity(FVector::ZeroVector);
+
+			//set the cue balls angular velocity to zero
+			BallActor->SetBallAngularVelocity(FVector::ZeroVector);
+		}
+		else
+		{
+			//call the player pawns handle ball in goal function
+			PlayerPawn->HandleBallInGoal(this, BallActor);
+		}
+	}
 }
 
 void AGoalActor::OnBoxEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	////check if the other actor is a ball actor
-	//if (OtherActor->IsA(ABallActor::StaticClass()))
-	//{
-	//	//get the ball actor
-	//	ABallActor* BallActor = Cast<ABallActor>(OtherActor);
-
-	//	//set the ball actor's sphere to be constrained to the XY plane
-	//	BallActor->SphereComponent->SetConstraintMode(EDOFMode::Type::XYPlane);
-
-	//	////print debug message to the screen
-	//	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Ball out of goal!"));
-	//}
 }
 
