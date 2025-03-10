@@ -6,7 +6,57 @@
 #include "GameFramework/Actor.h"
 #include "BallActor.generated.h"
 
+class UPhysicsDataBlueprint;
+class ABallActor;
 class UBallUpgradeDataAsset;
+
+////node struct for storing the information for resolving a multi-body collision
+//USTRUCT(BlueprintType)
+//struct FMultiBodyCollisionGraphNode
+//{
+//	GENERATED_BODY();
+//
+//	//our ball actor
+//	UPROPERTY(BlueprintReadOnly)
+//	TObjectPtr<ABallActor> OurBall = nullptr;
+//
+//	//whether or not we've already imparted our velocity to the rest of the graph
+//	UPROPERTY(BlueprintReadOnly)
+//	bool bImpartedVelocity = false;
+//
+//	//whether or not we're hitting a wall with the current direct velocity angle
+//	UPROPERTY(BlueprintReadOnly)
+//	bool bHittingWall = false;
+//
+//	//our current pending velocity angle directly from incoming collisions
+//	UPROPERTY(BlueprintReadOnly)
+//	FVector DirectVelocityAngle = FVector::ZeroVector;
+//
+//	//our current pending velocity angle directly from incoming collisions
+//	UPROPERTY(BlueprintReadOnly)
+//	FVector ReturnVelocityAngle = FVector::ZeroVector;
+//};
+//
+////graph struct for storing the information for resolving a multi-body collision
+//USTRUCT(BlueprintType)
+//struct FMultiBodyCollisionGraph
+//{
+//	GENERATED_BODY();
+//
+//	//our nodes
+//	UPROPERTY(BlueprintReadOnly)
+//	TArray<FMultiBodyCollisionGraphNode> Nodes = {};
+//
+//	//our physics data blueprint
+//	UPROPERTY(BlueprintReadOnly)
+//	TObjectPtr<UPhysicsDataBlueprint> PhysicsDataBlueprint = nullptr;
+//
+//	//static function to build a multi-body collision graph from an array of actors
+//	static FMultiBodyCollisionGraph BuildMultiBodyCollisionGraph(TArray<ABallActor*>& InBalls, UPhysicsDataBlueprint* PhysicsDataBP);
+//
+//	//recursive function to get all the actors that are in a multi-body collision with a given ball actor
+//	void GetCollisionDirectionsRecursive(TMap<ABallActor*, FVector>& OutMap, ABallActor* InBallActor, FVector ImpartedVelDirection, int Iterations = 0);
+//};
 
 UENUM(BlueprintType)
 enum EBallPhysicsState
@@ -25,6 +75,12 @@ class BOOL_API ABallActor : public AActor
 	GENERATED_BODY()
 	
 public:
+
+	//storage for the suggested velocity after a collision
+	FVector SuggestedVelocity = FVector::ZeroVector;
+
+	//storage for the suggested velocity for another ball after a collision with it
+	FVector OtherBallSuggestedVelocity = FVector::ZeroVector;
 
 	//sphere component for the cue ball
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
@@ -54,6 +110,14 @@ public:
 	UPROPERTY(EditAnywhere, Category = "BoolData|Debug", meta = (EditCondition = "bDebugMode", EditConditionHides))
 	bool UniqueDebugArrows = false;
 
+	//the old velocities of the ball
+	UPROPERTY(EditAnywhere, Category = "BoolData|Debug", meta = (EditCondition = "bDebugMode", EditConditionHides))
+	TArray<FVector> OldVelocities = {FVector::ZeroVector};
+
+	//the current physics data of the ball
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BoolData|Physics")
+	TSubclassOf<class UPhysicsDataBlueprint> PhysicsDataBlueprint;
+
 	//the current turn data for the ball
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BoolData|Turns")
 	class UBallCurrentTurnData* CurrentTurnData;
@@ -62,9 +126,25 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BoolData|Upgrade")
 	TArray<TSubclassOf<UBallUpgradeDataAsset>> BallUpgradeDataAssets;
 
+	//the actor tag to ignore when checking for collisions
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics")
+	FName ActorTagToIgnore = "IgnoreCol";
+
+	//our current velocity
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BoolData|Physics")
+	FVector CurrentVelocity = FVector::ZeroVector;
+
 	//the angular velocity of the ball
 	UPROPERTY(BlueprintReadOnly, Category = "BoolData|Physics")
 	FVector AngularVelocity = FVector::ZeroVector;
+
+	//the speed at which the ball is considered to be stationary
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics")
+	float StationarySpeed = 50;
+
+	//storage for the actors that are currently within our detection radius
+	UPROPERTY(BlueprintReadOnly, Category = "BoolData|Physics")
+	TArray<TObjectPtr<AActor>> OverlappingActors;
 
 	//the current physics state of the ball
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BoolData|Physics")
@@ -98,25 +178,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics")
 	bool bUseCustomCollisionResponse = true;
 
-	//the speed at which the ball is considered to be stationary
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics|Stationary")
-	float StationarySpeed = 50;
-
-	//the old velocities of the ball
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BoolData|Physics")
-	TArray<FVector> OldVelocities = {FVector::ZeroVector};
-
-	//our current velocity
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BoolData|Physics")
-	FVector CurrentVelocity = FVector::ZeroVector;
-
 	//the mass of the ball
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics")
 	float BallMass = 10;
-
-	//the actor tag to ignore when checking for collisions
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics")
-	FName ActorTagToIgnore = "IgnoreCol";
 
 	//the restitution to use for ball to wall collisions
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics|Collision")
@@ -133,6 +197,10 @@ public:
 	//the collision multiplier to use for ball to ball collisions
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics|Collision")
 	float BallBallCollisionMultiplier = .85;
+
+	//whether or not only the actor with the highest speed should process the collision (avoid processing the same collision twice)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics|Collision")
+	bool bOnlyProcessHighestSpeedCollision = false;
 
 	//the maximum relative speed gain from a collision between 2 balls (percentage)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics|Collision")
@@ -190,6 +258,15 @@ public:
 	//debug function to draw arrows for the old and new velocities after a ball against ball collision
 	void DrawVelChangeDebugArrows();
 
+	//gets the exit velocity of a ball after a collision with a wall
+	FVector GetExitVelocityAfterWallCollision(const FHitResult& Hit);
+
+	//gets the exit velocity of a ball after a collision with another ball
+	FVector GetExitVelocityAfterBallCollision(const FHitResult& Hit, ABallActor* OtherBallActor);
+
+	//gets the exit velocity of the other ball after a collision with this ball
+	FVector GetOtherBallExitVelocityAfterBallCollision(const FHitResult& Hit, ABallActor* OtherBallActor);
+
 	//function to process a ball hit and call the appropriate event(s)
 	bool ProcessBallHit(AActor* OtherActor, const FHitResult& Hit);
 
@@ -204,6 +281,14 @@ public:
 	UFUNCTION()
 	void OnSphereHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
+	//function called when the ball begins to detect an overlap
+	UFUNCTION()
+	void BallBeginDetectionOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	//function called when the ball ends detecting an overlap
+	UFUNCTION()
+	void BallEndDetectionOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
 	//function to get the velocity of the ball
 	UFUNCTION(BlueprintCallable)
 	FVector GetBallVelocity() const;
@@ -212,13 +297,13 @@ public:
 	UFUNCTION(BlueprintCallable)
 	FVector GetBallAngularVelocity() const;
 
-	//function to get the current friction coefficient we're using
-	UFUNCTION(BlueprintCallable)
-	float GetFrictionCoefficient() const;
+	////function to get the current friction coefficient we're using
+	//UFUNCTION(BlueprintCallable)
+	//float GetFrictionCoefficient() const;
 
-	//function to check if we're stationary
-	UFUNCTION(BlueprintCallable)
-	bool IsBallStationary() const;
+	////function to check if we're stationary
+	//UFUNCTION(BlueprintCallable)
+	//bool IsBallStationary() const;
 
 	//function to set the velocity of the ball
 	UFUNCTION(BlueprintCallable)
@@ -228,6 +313,10 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetBallAngularVelocity(const FVector& NewAngularVelocity);
 
-	//function to get a physics state enum value as a string
-	FString GetPhysicsStateAsString(EBallPhysicsState InPhysicsState) const;
+	//function that sets our velocity to zero and our angular velocity to zero
+	UFUNCTION()
+	void ErrorResetVelocities(FString ErrorMessage = "", bool bPrintCallStack = false);
+
+	////function to get a physics state enum value as a string
+	//FString GetPhysicsStateAsString(EBallPhysicsState InPhysicsState) const;
 };
