@@ -1,6 +1,6 @@
 #pragma once
 #include "CoreMinimal.h"
-#include "PhysicsDataBlueprint.generated.h"
+#include "PhysicsSolverBlueprintBase.generated.h"
 
 //forward declarations
 class ABallActor;
@@ -9,17 +9,13 @@ class ABallActor;
  * Class for getting physics data in a highly customizable way.
  */
 UCLASS(Blueprintable)
-class UPhysicsDataBlueprint : public UObject
+class UPhysicsSolverBlueprintBase : public UObject
 {
 	GENERATED_BODY()
 public:
 
 	//constructor(s)
-	UPhysicsDataBlueprint();
-
-	//whether or not to use seperate multi-body collision resolution
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics")
-	bool bUseMultiBodyCollisionResolution = false;
+	UPhysicsSolverBlueprintBase();
 
 	//sets the exit direction of a ball after a collision with a wall
 	UFUNCTION(BlueprintNativeEvent)
@@ -51,14 +47,9 @@ public:
 	float OtherBallCollisionSetExitSpeed(FVector OtherBallSuggestedVelocity, ABallActor* OtherBallActor, ABallActor* UnModifiedBall, FVector OutDirection, const FHitResult& Hit) const;
 	float OtherBallCollisionSetExitSpeed_Implementation(FVector OtherBallSuggestedVelocity, ABallActor* OtherBallActor, ABallActor* UnModifiedBall, FVector OutDirection, const FHitResult& Hit) const;
 
-	////sets the exit direction of a ball after a collision with another ball in a multi-body collision
-	//UFUNCTION(BlueprintNativeEvent)
-	//FVector MulitBallCollisionExitDir(ABallActor* UnModifiedBall, ABallActor* OtherBallActor, FVector IncomingDirection, FVector CollisionPoint, FVector HitNormal);
-	//FVector MulitBallCollisionExitDir_Implementation(ABallActor* UnModifiedBall, ABallActor* OtherBallActor, FVector IncomingDirection, FVector CollisionPoint, FVector HitNormal);
-
-	////sets the exit speed of a ball after a collision with another ball in a multi-body collision
-	//UFUNCTION(BlueprintNativeEvent)
-	//float MulitBallCollisionExitSpeed(ABallActor* UnModifiedBall, ABallActor* OtherBallActor, FVector IncomingDirection, FVector CollisionPoint, FVector HitNormal, FVector ExitDirection, float Force);
-	//float MulitBallCollisionExitSpeed_Implementation(ABallActor* UnModifiedBall, ABallActor* OtherBallActor, FVector IncomingDirection, FVector CollisionPoint, FVector HitNormal, FVector ExitDirection, float Force);
+	//updates a balls velocity every tick
+	UFUNCTION(BlueprintNativeEvent)
+	void UpdateBallVelocity(ABallActor* BallActor, float DeltaTime) const;
+	void UpdateBallVelocity_Implementation(ABallActor* BallActor, float DeltaTime) const;
 
 };

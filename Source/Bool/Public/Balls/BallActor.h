@@ -6,7 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "BallActor.generated.h"
 
-class UPhysicsDataBlueprint;
+class UPhysicsSolverBlueprintBase;
 class ABallActor;
 class UBallUpgradeDataAsset;
 
@@ -110,13 +110,23 @@ public:
 	UPROPERTY(EditAnywhere, Category = "BoolData|Debug", meta = (EditCondition = "bDebugMode", EditConditionHides))
 	bool UniqueDebugArrows = false;
 
+	//whether or not to draw a 1 tick debug sphere for this ball right before calling the physics solver's ball collision function
+	UPROPERTY(EditAnywhere, Category = "BoolData|Debug", meta = (EditCondition = "bDebugMode", EditConditionHides))
+	bool SingleTickBallColDebugSphere = false;
+
+	//whether or not to draw a 1 tick debug sphere for the other ball right before calling the physics solver's ball collision function
+	UPROPERTY(EditAnywhere, Category = "BoolData|Debug", meta = (EditCondition = "bDebugMode", EditConditionHides))
+	bool SingleTickOtherBallColDebugSphere = false;
+
 	//the old velocities of the ball
 	UPROPERTY(EditAnywhere, Category = "BoolData|Debug", meta = (EditCondition = "bDebugMode", EditConditionHides))
 	TArray<FVector> OldVelocities = {FVector::ZeroVector};
 
 	//the current physics data of the ball
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BoolData|Physics")
-	TSubclassOf<class UPhysicsDataBlueprint> PhysicsDataBlueprint;
+	TSubclassOf<class UPhysicsSolverBlueprintBase> PhysicsSolverClass;
+
+	TObjectPtr<UPhysicsSolverBlueprintBase> PhysicsSolver;
 
 	//the current turn data for the ball
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BoolData|Turns")
@@ -269,6 +279,7 @@ public:
 
 	//function to process a ball hit and call the appropriate event(s)
 	bool ProcessBallHit(AActor* OtherActor, const FHitResult& Hit);
+	bool ProcessHit(const FHitResult& HitResult, AActor* OtherActor);
 
 	//function to process a wall hit and call the appropriate event(s)
 	void ProcessWallHit(const FHitResult& Hit);
