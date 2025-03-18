@@ -82,6 +82,12 @@ public:
 	//storage for the suggested velocity for another ball after a collision with it
 	FVector OtherBallSuggestedVelocity = FVector::ZeroVector;
 
+	//storage for the suggested angular velocity after a collision
+	FVector SuggestedAngularVelocity = FVector::ZeroVector;
+
+	//storage for the suggested angular velocity for another ball after a collision with it
+	FVector OtherBallSuggestedAngularVelocity = FVector::ZeroVector;
+
 	//sphere component for the cue ball
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class USphereComponent* SphereComponent;
@@ -267,15 +273,6 @@ public:
 
 	//debug function to draw arrows for the old and new velocities after a ball against ball collision
 	void DrawVelChangeDebugArrows();
-
-	//gets the exit velocity of a ball after a collision with a wall
-	FVector GetExitVelocityAfterWallCollision(const FHitResult& Hit);
-
-	//gets the exit velocity of a ball after a collision with another ball
-	FVector GetExitVelocityAfterBallCollision(const FHitResult& Hit, ABallActor* OtherBallActor);
-
-	//gets the exit velocity of the other ball after a collision with this ball
-	FVector GetOtherBallExitVelocityAfterBallCollision(const FHitResult& Hit, ABallActor* OtherBallActor);
 
 	//function to process a ball hit and call the appropriate event(s)
 	bool ProcessBallHit(AActor* OtherActor, const FHitResult& Hit);

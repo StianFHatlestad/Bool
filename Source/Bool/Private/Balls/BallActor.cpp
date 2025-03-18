@@ -237,13 +237,7 @@ void ABallActor::Tick(const float DeltaTime)
 	
 	//move the component
 	SphereComponent->MoveComponent(GetBallVelocity() * DeltaTime, SphereComponent->GetComponentRotation() + GetBallAngularVelocity().Rotation() * DeltaTime, true);
-	
-	//update the bool physics state
-	UpdateBoolPhysicsState(DeltaTime);
-	
-	//update the bool physics variables
-	UpdatePhysicsVariables(DeltaTime);
-	
+
 	//check if we're outside the table
 	if (IsOutsideTable())
 	{
@@ -268,6 +262,25 @@ void ABallActor::Tick(const float DeltaTime)
 			ProcessWallHit(HitResult);
 		}
 	}
+
+	//check if we have a valid physics solver
+	if (PhysicsSolverClass)
+	{
+		//use the physics solver to update our velocity
+		PhysicsSolver->UpdateBallVelocity(this, DeltaTime);
+
+		//use the physics solver to update our angular velocity
+		PhysicsSolver->UpdateBallAngularVelocity(this, DeltaTime);
+
+		//return to prevent further execution
+		return;
+	}
+
+	//update the bool physics state
+	UpdateBoolPhysicsState(DeltaTime);
+	
+	//update the bool physics variables
+	UpdatePhysicsVariables(DeltaTime);
 }
 
 void ABallActor::UpdateBoolPhysicsState(const float DeltaTime)
@@ -346,13 +359,6 @@ void ABallActor::UpdateBoolPhysicsState(const float DeltaTime)
 
 void ABallActor::UpdatePhysicsVariables(const float DeltaTime)
 {
-	//check if we have a valid physics solver
-	if (PhysicsSolverClass)
-	{
-		//call the update ball velocity function
-		PhysicsSolver->UpdateBallVelocity(this, DeltaTime);
-	}
-
 	//check the physics state
 	switch (PhysicsState)
 	{
@@ -459,78 +465,6 @@ void ABallActor::DrawVelChangeDebugArrows()
 
 	//draw a debug arrow in the new velocity direction
 	DrawDebugDirectionalArrow(GetWorld(), GetActorLocation(), GetActorLocation() + GetBallVelocity(), 100, NewVelColour, UniqueDebugArrows, 5, DepthPriority, Thickness);
-}
-
-FVector ABallActor::GetExitVelocityAfterWallCollision(const FHitResult& Hit)
-{
-	//check if we don't have a valid physics data blueprint
-	if (!PhysicsSolverClass->IsValidLowLevelFast())
-	{
-		//return the reflection vector
-		return UKismetMathLibrary::GetReflectionVector(GetBallVelocity(), Hit.ImpactNormal).GetSafeNormal();
-	}
-
-	//process the hit
-	ProcessWallHit(Hit);
-
-	//get the physics data blueprint
-	const TObjectPtr<UPhysicsSolverBlueprintBase> PhysicsDataBP = PhysicsSolverClass.GetDefaultObject();
-
-	//get the exit direction
-	const FVector ExitDirection = PhysicsDataBP->WallCollisionSetExitDirection(SuggestedVelocity, this, Hit);
-
-	//get the exit speed
-	const float ExitSpeed = PhysicsDataBP->WallCollisionSetExitSpeed(SuggestedVelocity, this, Hit);
-
-	//set our new velocity
-	return ExitDirection * ExitSpeed;
-}
-
-FVector ABallActor::GetExitVelocityAfterBallCollision(const FHitResult& Hit, ABallActor* OtherBallActor)
-{
-	//check if we don't have a valid physics data blueprint
-	if (!PhysicsSolverClass->IsValidLowLevelFast())
-	{
-		//return the reflection vector
-		return UKismetMathLibrary::GetReflectionVector(GetBallVelocity(), Hit.ImpactNormal).GetSafeNormal();
-	}
-
-	//get the physics data blueprint
-	const TObjectPtr<UPhysicsSolverBlueprintBase> PhysicsDataBP = PhysicsSolverClass.GetDefaultObject();
-
-	//process the hit
-	ProcessBallHit(OtherBallActor, Hit);
-
-	//get the exit direction
-	const FVector ExitDirection = PhysicsDataBP->BallCollisionSetExitDirection(SuggestedVelocity, this, OtherBallActor, Hit);
-
-	//get the exit speed
-	const float ExitSpeed = PhysicsDataBP->BallCollisionSetExitSpeed(SuggestedVelocity, this, OtherBallActor, ExitDirection, Hit);
-
-	//return the exit velocity
-	return ExitDirection * ExitSpeed;
-}
-
-FVector ABallActor::GetOtherBallExitVelocityAfterBallCollision(const FHitResult& Hit, ABallActor* OtherBallActor)
-{
-	//check if we don't have a valid physics data blueprint
-	if (!PhysicsSolverClass->IsValidLowLevelFast())
-	{
-		//return the reflection vector
-		return UKismetMathLibrary::GetReflectionVector(GetBallVelocity(), Hit.ImpactNormal).GetSafeNormal();
-	}
-
-	//get the physics data blueprint
-	const TObjectPtr<UPhysicsSolverBlueprintBase> PhysicsDataBP = PhysicsSolverClass.GetDefaultObject();
-
-	//get the exit direction
-	const FVector ExitDirection = PhysicsDataBP->OtherBallCollisionSetExitDirection(OtherBallSuggestedVelocity, this, OtherBallActor, Hit);
-
-	//get the exit speed
-	const float ExitSpeed = PhysicsDataBP->OtherBallCollisionSetExitSpeed(OtherBallSuggestedVelocity, this, OtherBallActor, ExitDirection, Hit);
-
-	//return the exit velocity
-	return ExitDirection * ExitSpeed;
 }
 
 bool ABallActor::ProcessBallHit(AActor* OtherActor, const FHitResult& Hit)
@@ -716,6 +650,10 @@ bool ABallActor::ProcessBallHit(AActor* OtherActor, const FHitResult& Hit)
 	SuggestedVelocity = OurVel_f * BallBallCollisionMultiplier;
 	OtherBallSuggestedVelocity = OtherBallVel_f * BallBallCollisionMultiplier;
 
+	//set the suggested angular velocities
+	SuggestedAngularVelocity = OurAngVel_f;
+	OtherBallSuggestedAngularVelocity = OtherBallAngVel_f;
+
 	//set both balls to be rolling
 	SetBoolPhysicsState(Ebps_Rolling);
 	OtherBallActor->SetBoolPhysicsState(Ebps_Rolling);
@@ -737,7 +675,7 @@ bool ABallActor::ProcessHit(const FHitResult& HitResult, AActor* OtherActor)
 	if (OtherActor == this)
 	{
 		//return early to prevent further execution
-		return true;
+		return false;
 	}
 
 	//check if we don't have a valid physics data blueprint
@@ -747,7 +685,7 @@ bool ABallActor::ProcessHit(const FHitResult& HitResult, AActor* OtherActor)
 		ErrorResetVelocities(GetActorNameOrLabel() + " Has No Valid PhysicsDataBlueprint");
 
 		//return early to prevent further execution
-		return true;
+		return false;
 	}
 	
 	//check if we're overlapping a ball actor
@@ -781,7 +719,7 @@ bool ABallActor::ProcessHit(const FHitResult& HitResult, AActor* OtherActor)
 		if (!OtherBallActor->OldVelocities.Num())
 		{
 			//return early to prevent further execution
-			return true;
+			return false;
 		}
 
 		//storage for our speed
@@ -794,14 +732,39 @@ bool ABallActor::ProcessHit(const FHitResult& HitResult, AActor* OtherActor)
 		if (bOnlyProcessHighestSpeedCollision && OurSpeed < OtherBallSpeed)
 		{
 			//return early to prevent further execution
-			return true;
+			return false;
 		}
 
+		//check if we don't have a valid physics data blueprint
+		if (!PhysicsSolverClass->IsValidLowLevelFast())
+		{
+			//return the reflection vector
+			return false;
+		}
+
+		//get the physics data blueprint
+		const TObjectPtr<UPhysicsSolverBlueprintBase> PhysicsDataBP = PhysicsSolverClass.GetDefaultObject();
+
+		//process the hit
+		ProcessBallHit(OtherBallActor, HitResult);
+
+		//get the exit direction
+		const FVector ExitDirection = PhysicsDataBP->BallCollisionSetExitDirection(SuggestedVelocity, this, OtherBallActor, HitResult);
+
+		//get the exit speed
+		const float ExitSpeed = PhysicsDataBP->BallCollisionSetExitSpeed(SuggestedVelocity, this, OtherBallActor, ExitDirection, HitResult);
+
 		//get our exit velocity after the ball collision
-		FVector ExitVelocity = GetExitVelocityAfterBallCollision(HitResult, OtherBallActor.Get());
+		FVector ExitVelocity = ExitDirection * ExitSpeed;
+
+		//get the exit direction
+		const FVector OtherBallExitDirection = PhysicsDataBP->OtherBallCollisionSetExitDirection(OtherBallSuggestedVelocity, this, OtherBallActor, HitResult);
+
+		//get the exit speed
+		const float OtherBallExitSpeed = PhysicsDataBP->OtherBallCollisionSetExitSpeed(OtherBallSuggestedVelocity, this, OtherBallActor, ExitDirection, HitResult);
 
 		//get the exit velocity for the other ball
-		FVector OtherBallExitVelocity = GetOtherBallExitVelocityAfterBallCollision(HitResult, OtherBallActor.Get());
+		FVector OtherBallExitVelocity = OtherBallExitDirection * OtherBallExitSpeed;
 
 		//check if our max relative speed gain is greater than 0
 		if (MaxRelativeSpeedGain > 0)
@@ -837,8 +800,36 @@ bool ABallActor::ProcessHit(const FHitResult& HitResult, AActor* OtherActor)
 
 	//assume we're overlapping a wall actor
 
+	//check if we don't have a valid physics data blueprint
+	if (!PhysicsSolverClass->IsValidLowLevelFast())
+	{
+		//return the reflection vector
+		return false;
+	}
+
+	//process the hit
+	ProcessWallHit(HitResult);
+
+	//get the physics data blueprint
+	const TObjectPtr<UPhysicsSolverBlueprintBase> PhysicsDataBP = PhysicsSolverClass.GetDefaultObject();
+
+	//get the exit direction
+	const FVector ExitDirection = PhysicsDataBP->WallCollisionSetExitDirection(SuggestedVelocity, this, HitResult);
+
+	//get the exit speed
+	const float ExitSpeed = PhysicsDataBP->WallCollisionSetExitSpeed(SuggestedVelocity, this, HitResult);
+
 	//get the exit velocity after the wall collision
-	const FVector ExitVelocity = GetExitVelocityAfterWallCollision(HitResult);
+	const FVector ExitVelocity = ExitDirection * ExitSpeed;
+
+	//get the angular exit direction
+	const FVector AngularExitDirection = PhysicsDataBP->WallCollisionSetAngularExitDirection(SuggestedAngularVelocity, this, HitResult);
+
+	//get the angular exit speed
+	const float AngularExitSpeed = PhysicsDataBP->WallCollisionSetAngularExitSpeed(SuggestedAngularVelocity, this, HitResult);
+
+	//get the angular exit velocity after the wall collision
+	const FVector AngularExitVelocity = AngularExitDirection * AngularExitSpeed;
 
 	//check if we're in debug mode and we're drawing debug arrows for the old and new velocities of this ball
 	if (bDebugMode && BallColDebugArrows)
@@ -849,6 +840,9 @@ bool ABallActor::ProcessHit(const FHitResult& HitResult, AActor* OtherActor)
 
 	//set our new velocity
 	SetBallVelocity(ExitVelocity);
+
+	//set our new angular velocity
+	SetBallAngularVelocity(AngularExitVelocity);
 
 	return false;
 }
@@ -1020,7 +1014,7 @@ void ABallActor::ProcessWallHit(const FHitResult& Hit)
 	SuggestedVelocity = FVector(rvw_R2[1].X, rvw_R2[1].Y, 0);
 
 	//set the suggested new angular velocity
-	AngularVelocity = rvw_R2[2];
+	SuggestedAngularVelocity = rvw_R2[2];
 
 	//check if we're in debug mode and we're displaying the debug arrows
 	if (bDebugMode && WallColDebugArrows)
