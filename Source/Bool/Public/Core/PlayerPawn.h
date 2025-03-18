@@ -118,7 +118,7 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	//function to shoot the cue ball at a specific position
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 	void ShootCueBallAtPosition(FVector NewVelocity, FName BoneName) const;
 
 	//function to set the current cue ball hit location
