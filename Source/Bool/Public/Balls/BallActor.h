@@ -120,10 +120,12 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	class APlayerPawn* PlayerPawn = nullptr;
 
-	//the current physics data of the ball
+	//the current physics solver class of the ball
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BoolData|Physics")
 	TSubclassOf<class UPhysicsSolverBlueprintBase> PhysicsSolverClass;
 
+	//the current physics solver of the ball
+	UPROPERTY(BlueprintReadOnly, Category = "BoolData|Physics")
 	TObjectPtr<UPhysicsSolverBlueprintBase> PhysicsSolver;
 
 	//the current turn data for the ball
@@ -146,9 +148,20 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "BoolData|Physics")
 	FVector AngularVelocity = FVector::ZeroVector;
 
-	//the speed at which the ball is considered to be stationary
+	//how long to store the last collided ball for
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics")
-	float StationarySpeed = 50;
+	float LastCollidedBallStorageTime = 0.1;
+
+	//storage for the last ball we collided with
+	UPROPERTY(BlueprintReadOnly, Category = "BoolData|Physics")
+	TObjectPtr<ABallActor> LastCollidedBall = nullptr;
+
+	//storage for the timer handle for resetting the last collided ball
+	FTimerHandle LastCollidedBallResetTimer;
+
+	////the speed at which the ball is considered to be stationary
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics")
+	//float StationarySpeed = 50;
 
 	////storage for the actors that are currently within our detection radius
 	//UPROPERTY(BlueprintReadOnly, Category = "BoolData|Physics")

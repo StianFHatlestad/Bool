@@ -738,11 +738,25 @@ bool ABallActor::ProcessHit(const FHitResult& HitResult, AActor* OtherActor)
 		float OtherBallSpeed = OtherBallActor->OldVelocities[0].Length();
 
 		//check if the other actor has more speed than us
-		if (bOnlyProcessHighestSpeedCollision && OurSpeed < OtherBallSpeed)
+		if (bOnlyProcessHighestSpeedCollision && (OurSpeed < OtherBallSpeed || LastCollidedBall == OtherBallActor || OtherBallActor->LastCollidedBall == this))
 		{
 			//return early to prevent further execution
 			return false;
 		}
+
+		//set the last collided ball
+		LastCollidedBall = OtherBallActor;
+
+		//set a lambda function to reset the last collided ball actor
+		GetWorld()->GetTimerManager().SetTimer(LastCollidedBallResetTimer, [this]
+		{
+			//reset the last collided ball
+			LastCollidedBall = nullptr;
+
+			//clear the timer
+			GetWorld()->GetTimerManager().ClearTimer(LastCollidedBallResetTimer);
+		}, LastCollidedBallStorageTime, false);
+
 
 		//get the physics data blueprint
 		const TObjectPtr<UPhysicsSolverBlueprintBase> PhysicsDataBP = PhysicsSolverClass.GetDefaultObject();

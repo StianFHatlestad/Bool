@@ -201,16 +201,16 @@ bool APlayerPawn::CanShoot() const
 	//loop through the ball actors
 	for (TObjectPtr<AActor> BallActor : BallActors)
 	{
-		//check if the physics linear velocity is greater than the ball stop speed
-		if (Cast<ABallActor>(BallActor)->GetBallVelocity().Size() > CueBall->StationarySpeed)
+		//check if the ball is not stationary
+		if (Cast<ABallActor>(BallActor)->PhysicsState != Ebps_Stationary)
 		{
 			//return false
 			return false;
 		}
 	}
 
-	//check if the cue ball actors' physics linear velocity is greater than the ball stop speed
-	if (CueBall->GetBallVelocity().Size() > CueBall->StationarySpeed)
+	//check if the cue ball is not stationary
+	if (CueBall->PhysicsState != Ebps_Stationary)
 	{
 		//return false
 		return false;
