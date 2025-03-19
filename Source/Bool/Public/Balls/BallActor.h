@@ -76,18 +76,6 @@ class BOOL_API ABallActor : public AActor
 	
 public:
 
-	//storage for the suggested velocity after a collision
-	FVector SuggestedVelocity = FVector::ZeroVector;
-
-	//storage for the suggested velocity for another ball after a collision with it
-	FVector OtherBallSuggestedVelocity = FVector::ZeroVector;
-
-	//storage for the suggested angular velocity after a collision
-	FVector SuggestedAngularVelocity = FVector::ZeroVector;
-
-	//storage for the suggested angular velocity for another ball after a collision with it
-	FVector OtherBallSuggestedAngularVelocity = FVector::ZeroVector;
-
 	//sphere component for the cue ball
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class USphereComponent* SphereComponent;
@@ -128,6 +116,10 @@ public:
 	UPROPERTY(EditAnywhere, Category = "BoolData|Debug", meta = (EditCondition = "bDebugMode", EditConditionHides))
 	TArray<FVector> OldVelocities = {FVector::ZeroVector};
 
+	//the player pawn in the level (for blueprint access
+	UPROPERTY(BlueprintReadOnly)
+	class APlayerPawn* PlayerPawn = nullptr;
+
 	//the current physics data of the ball
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BoolData|Physics")
 	TSubclassOf<class UPhysicsSolverBlueprintBase> PhysicsSolverClass;
@@ -158,33 +150,33 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics")
 	float StationarySpeed = 50;
 
-	//storage for the actors that are currently within our detection radius
-	UPROPERTY(BlueprintReadOnly, Category = "BoolData|Physics")
-	TArray<TObjectPtr<AActor>> OverlappingActors;
+	////storage for the actors that are currently within our detection radius
+	//UPROPERTY(BlueprintReadOnly, Category = "BoolData|Physics")
+	//TArray<TObjectPtr<AActor>> OverlappingActors;
 
 	//the current physics state of the ball
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BoolData|Physics")
 	TEnumAsByte<EBallPhysicsState> PhysicsState = Ebps_Stationary;
 
-	//the spinning friction coefficient of the table
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics|Spinning")
-	float TableSpinningFrictionCoefficient = 0.6;
+	////the spinning friction coefficient of the table
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics|Spinning")
+	//float TableSpinningFrictionCoefficient = 0.6;
 
-	//the rolling friction coefficient of the table
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics|Rolling")
-	float TableRollingFrictionCoefficient = 0.8;
+	////the rolling friction coefficient of the table
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics|Rolling")
+	//float TableRollingFrictionCoefficient = 0.8;
 
-	//the sliding friction coefficient of the table
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics|Sliding")
-	float TableSlidingFrictionCoefficient = 0.9;
+	////the sliding friction coefficient of the table
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics|Sliding")
+	//float TableSlidingFrictionCoefficient = 0.9;
 
-	//the threshold for whether we're sliding or rolling (lowering leads to more being considered sliding instead of rolling)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics")
-	float SlidingRollingThreshold = 50;
+	////the threshold for whether we're sliding or rolling (lowering leads to more being considered sliding instead of rolling)
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics")
+	//float SlidingRollingThreshold = 50;
 
-	//storage for the initial relative velocity between the ball and the table when starting to slide
-	UPROPERTY(BlueprintReadOnly, Category = "BoolData|Physics|Sliding")
-	FVector InitialRelativeVelocity = FVector::ZeroVector;
+	////storage for the initial relative velocity between the ball and the table when starting to slide
+	//UPROPERTY(BlueprintReadOnly, Category = "BoolData|Physics|Sliding")
+	//FVector InitialRelativeVelocity = FVector::ZeroVector;
 
 	//whether or not to use custom physics
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics")
@@ -194,25 +186,25 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics")
 	bool bUseCustomCollisionResponse = true;
 
-	//the mass of the ball
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics")
-	float BallMass = 10;
+	////the mass of the ball
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics")
+	//float BallMass = 10;
 
-	//the restitution to use for ball to wall collisions
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics|Collision")
-	float WallRestitution = .2;
+	////the restitution to use for ball to wall collisions
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics|Collision")
+	//float WallRestitution = .2;
 
-	//the friction to use for ball to wall collisions
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics|Collision")
-	float WallFriction = .85;
+	////the friction to use for ball to wall collisions
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics|Collision")
+	//float WallFriction = .85;
 
-	//the restitution to use for ball to ball collisions
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics|Collision")
-	float BallRestitution = .999999;
+	////the restitution to use for ball to ball collisions
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics|Collision")
+	//float BallRestitution = .999999;
 
-	//the collision multiplier to use for ball to ball collisions
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics|Collision")
-	float BallBallCollisionMultiplier = .85;
+	////the collision multiplier to use for ball to ball collisions
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics|Collision")
+	//float BallBallCollisionMultiplier = .85;
 
 	//whether or not only the actor with the highest speed should process the collision (avoid processing the same collision twice)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics|Collision")
@@ -222,17 +214,17 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics|Collision")
 	float MaxRelativeSpeedGain = -1;
 
-	//the first frictional constant for ball to ball collisions
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics|Collision")
-	float BallBallFrictionA = 9.951e-3;
+	////the first frictional constant for ball to ball collisions
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics|Collision")
+	//float BallBallFrictionA = 9.951e-3;
 
-	//the second frictional constant for ball to ball collisions
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics|Collision")
-	float BallBallFrictionB = 0.108;
+	////the second frictional constant for ball to ball collisions
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics|Collision")
+	//float BallBallFrictionB = 0.108;
 
-	//the third frictional constant for ball to ball collisions
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics|Collision")
-	float BallBallFrictionC = 1.088;
+	////the third frictional constant for ball to ball collisions
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics|Collision")
+	//float BallBallFrictionC = 1.088;
 
 	//the position of the box we use to check if we're outside the table
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics")
@@ -252,13 +244,13 @@ public:
 	//function to update the old velocities
 	void UpdateOldVelocities();
 
-	//function to check if the state of the ball should be updated
-	UFUNCTION(BlueprintCallable)
-	void UpdateBoolPhysicsState(float DeltaTime);
+	////function to check if the state of the ball should be updated
+	//UFUNCTION(BlueprintCallable)
+	//void UpdateBoolPhysicsState(float DeltaTime);
 
-	//function to update the physics variables of the ball
-	UFUNCTION(BlueprintCallable)
-	void UpdatePhysicsVariables(float DeltaTime);
+	////function to update the physics variables of the ball
+	//UFUNCTION(BlueprintCallable)
+	//void UpdatePhysicsVariables(float DeltaTime);
 
 	//function to set the bool physics state
 	UFUNCTION(BlueprintCallable)
@@ -268,18 +260,20 @@ public:
 	UFUNCTION(BlueprintCallable)
 	bool IsOutsideTable() const;
 
-	//helper function to get the friction between 2 colliding balls
-	float GetFrictionBetweenBalls(const TObjectPtr<ABallActor>& OtherBallActor) const;
+	////helper function to get the friction between 2 colliding balls
+	//float GetFrictionBetweenBalls(const TObjectPtr<ABallActor>& OtherBallActor) const;
 
 	//debug function to draw arrows for the old and new velocities after a ball against ball collision
 	void DrawVelChangeDebugArrows();
 
-	//function to process a ball hit and call the appropriate event(s)
-	bool ProcessBallHit(AActor* OtherActor, const FHitResult& Hit);
+	//function to handle the ball collision with another actor
 	bool ProcessHit(const FHitResult& HitResult, AActor* OtherActor);
 
-	//function to process a wall hit and call the appropriate event(s)
-	void ProcessWallHit(const FHitResult& Hit);
+	////function to process a ball hit and call the appropriate event(s)
+	//bool ProcessBallHit(AActor* OtherActor, const FHitResult& Hit);
+
+	////function to process a wall hit and call the appropriate event(s)
+	//void ProcessWallHit(const FHitResult& Hit);
 
 	//function called when the ball overlaps with another actor
 	UFUNCTION()
@@ -289,13 +283,13 @@ public:
 	UFUNCTION()
 	void OnSphereHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
-	//function called when the ball begins to detect an overlap
-	UFUNCTION()
-	void BallBeginDetectionOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	////function called when the ball begins to detect an overlap
+	//UFUNCTION()
+	//void BallBeginDetectionOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
-	//function called when the ball ends detecting an overlap
-	UFUNCTION()
-	void BallEndDetectionOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	////function called when the ball ends detecting an overlap
+	//UFUNCTION()
+	//void BallEndDetectionOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 	//function to get the velocity of the ball
 	UFUNCTION(BlueprintCallable)
