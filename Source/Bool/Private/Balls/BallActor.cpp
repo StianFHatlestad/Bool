@@ -7,6 +7,7 @@
 #include "Balls/BallUpgradeDataAsset.h"
 #include "Bool/GoalActor.h"
 #include "Components/SphereComponent.h"
+#include "Core/PlayerPawn.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Math/MathFwd.h"
@@ -195,6 +196,17 @@ void ABallActor::BeginPlay()
 		//ignore the actor
 		SphereComponent->IgnoreActorWhenMoving(ActorToIgnore, true);
 	}
+
+	//get the player pawn in the level
+	TArray<AActor*> PlayerPawns;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), APlayerPawn::StaticClass(), PlayerPawns);
+
+	//check if we have a valid player pawn
+	if (PlayerPawns.Num() > 0)
+	{
+		//set the player pawn
+		PlayerPawn = Cast<APlayerPawn>(PlayerPawns[0]);
+	}
 }
 
 void ABallActor::UpdateOldVelocities()
@@ -218,9 +230,6 @@ void ABallActor::Tick(const float DeltaTime)
 	//update the old velocity
 	UpdateOldVelocities();
 
-	////move the component
-	//SphereComponent->MoveComponent(GetBallVelocity() * DeltaTime, SphereComponent->GetComponentRotation() + GetBallAngularVelocity().Rotation() * DeltaTime, true);
-	//
 	//check if we're not using custom physics
 	if (!bUseCustomPhysics)
 	{
@@ -258,8 +267,8 @@ void ABallActor::Tick(const float DeltaTime)
 			//set the location to the hit result location
 			SetActorLocation(HitResult.Location);
 	
-			//process the wall hit
-			ProcessWallHit(HitResult);
+			//process hit
+			ProcessHit(HitResult, HitResult.GetActor());
 		}
 	}
 
@@ -272,143 +281,143 @@ void ABallActor::Tick(const float DeltaTime)
 		//use the physics solver to update our angular velocity
 		PhysicsSolver->UpdateBallAngularVelocity(this, DeltaTime);
 
-		//return to prevent further execution
-		return;
+		////return to prevent further execution
+		//return;
 	}
 
-	//update the bool physics state
-	UpdateBoolPhysicsState(DeltaTime);
-	
-	//update the bool physics variables
-	UpdatePhysicsVariables(DeltaTime);
+	////update the bool physics state
+	//UpdateBoolPhysicsState(DeltaTime);
+	//
+	////update the bool physics variables
+	//UpdatePhysicsVariables(DeltaTime);
 }
 
-void ABallActor::UpdateBoolPhysicsState(const float DeltaTime)
-{
-	//check if we're basically stationary
-	if (GetBallVelocity().IsNearlyZero() && AngularVelocity.IsNearlyZero())
-	{
-		//set the physics state to stationary
-		SetBoolPhysicsState(Ebps_Stationary);
-
-		//check if we're in debug mode
-		if (bDebugMode && bDisplayPhysicsState)
-		{
-			//draw a red debug sphere
-			DrawDebugSphere(GetWorld(), GetActorLocation(), SphereComponent->GetScaledSphereRadius() + 1, 10, FColor::Red, false, 0);
-		}
-
-		//return to prevent further execution
-		return;
-	}
-
-	//check if we're spinning
-	if (DeltaTime <= 2 * SphereComponent->GetScaledSphereRadius() / (5 * TableSpinningFrictionCoefficient * (GetWorld()->GetGravityZ() / 100)) * AngularVelocity.Z)
-	{
-		//set the physics state to spinning
-		SetBoolPhysicsState(Ebps_Spinning);
-
-		//check if we're in debug mode
-		if (bDebugMode && bDisplayPhysicsState)
-		{
-			//draw a blue debug sphere
-			DrawDebugSphere(GetWorld(), GetActorLocation(), SphereComponent->GetScaledSphereRadius() + 1, 10, FColor::Blue, false, 0);
-		}
-
-		//return to prevent further execution
-		return;
-	}
-
-	//check if we're sliding
-	if (DeltaTime <= /*2 / 7 **/ InitialRelativeVelocity.Length() / TableSlidingFrictionCoefficient * (GetWorld()->GetGravityZ() / 100))
-	{
-		//set the physics state to sliding
-		SetBoolPhysicsState(Ebps_Sliding);
-
-		//check if we're in debug mode
-		if (bDebugMode && bDisplayPhysicsState)
-		{
-			//draw a green debug sphere
-			DrawDebugSphere(GetWorld(), GetActorLocation(), SphereComponent->GetScaledSphereRadius() + 1, 10, FColor::Green, false, 0);
-		}
-
-		//return to prevent further execution
-		return;
-	}
-
-	//check if we're rolling
-	if (DeltaTime <= CurrentVelocity.Length() * TableRollingFrictionCoefficient)
-	{
-		//set the physics state to rolling
-		SetBoolPhysicsState(Ebps_Rolling);
-
-		//check if we're in debug mode
-		if (bDebugMode && bDisplayPhysicsState)
-		{
-			//draw a yellow debug sphere
-			DrawDebugSphere(GetWorld(), GetActorLocation(), SphereComponent->GetScaledSphereRadius() + 1, 10, FColor::Yellow, false, 0);
-		}
-
-		//return to prevent further execution
-		return;
-	}
-
-	//set the physics state to stationary
-	SetBoolPhysicsState(Ebps_Stationary);
-}
-
-void ABallActor::UpdatePhysicsVariables(const float DeltaTime)
-{
-	//check the physics state
-	switch (PhysicsState)
-	{
-		case Ebps_Spinning:
-		{
-			//set the angular velocity variable
-			SetBallAngularVelocity(FVector(0, 0, (AngularVelocity.Z - 5 * TableSpinningFrictionCoefficient * (GetWorld()->GetGravityZ() / 100) / 2) * DeltaTime));
-
-			//break
-			break;
-		}
-
-		case Ebps_Rolling:
-		{
-			//get the linear velocity magnitude
-			const float VelocityMagnitute = GetBallVelocity().Size() - TableRollingFrictionCoefficient * (-GetWorld()->GetGravityZ() / 100) * DeltaTime;
-
-			//set the velocity
-			SetBallVelocity(GetBallVelocity().GetSafeNormal() * VelocityMagnitute);
-
-			//set the angular velocity variable
-			SetBallAngularVelocity(FVector(0, GetBallVelocity().X / SphereComponent->GetScaledSphereRadius(), AngularVelocity.Z - 5 * TableRollingFrictionCoefficient * (-GetWorld()->GetGravityZ() / 100) * DeltaTime / (2 * SphereComponent->GetScaledSphereRadius())));
-
-			//break
-			break;
-		}
-
-		case Ebps_Sliding:
-		{
-			//storage for the world gravityz
-			const float WorldGravityZ = -GetWorld()->GetGravityZ() / 100;
-
-			//set the velocity
-			SetBallVelocity(GetBallVelocity() - TableSlidingFrictionCoefficient * WorldGravityZ * DeltaTime * InitialRelativeVelocity.GetSafeNormal());
-
-			//update the initial relative velocity
-			InitialRelativeVelocity = GetBallVelocity() - 2 / 7 * TableSlidingFrictionCoefficient * WorldGravityZ * DeltaTime * InitialRelativeVelocity.GetSafeNormal();
-
-			//set the angular velocity variable
-			SetBallAngularVelocity(FVector(
-				AngularVelocity.X - 5 * TableSlidingFrictionCoefficient * WorldGravityZ * DeltaTime / (2 * SphereComponent->GetScaledSphereRadius()),
-				AngularVelocity.Y - 5 * TableSlidingFrictionCoefficient * WorldGravityZ * DeltaTime / (2 * SphereComponent->GetScaledSphereRadius()),
-				AngularVelocity.Z - 5 * TableSpinningFrictionCoefficient * WorldGravityZ * DeltaTime / (2 * SphereComponent->GetScaledSphereRadius())));
-
-			//break
-			break;
-		}
-		default: ;
-	}
-}
+//void ABallActor::UpdateBoolPhysicsState(const float DeltaTime)
+//{
+//	//check if we're basically stationary
+//	if (GetBallVelocity().IsNearlyZero() && AngularVelocity.IsNearlyZero())
+//	{
+//		//set the physics state to stationary
+//		SetBoolPhysicsState(Ebps_Stationary);
+//
+//		//check if we're in debug mode
+//		if (bDebugMode && bDisplayPhysicsState)
+//		{
+//			//draw a red debug sphere
+//			DrawDebugSphere(GetWorld(), GetActorLocation(), SphereComponent->GetScaledSphereRadius() + 1, 10, FColor::Red, false, 0);
+//		}
+//
+//		//return to prevent further execution
+//		return;
+//	}
+//
+//	//check if we're spinning
+//	if (DeltaTime <= 2 * SphereComponent->GetScaledSphereRadius() / (5 * TableSpinningFrictionCoefficient * (GetWorld()->GetGravityZ() / 100)) * AngularVelocity.Z)
+//	{
+//		//set the physics state to spinning
+//		SetBoolPhysicsState(Ebps_Spinning);
+//
+//		//check if we're in debug mode
+//		if (bDebugMode && bDisplayPhysicsState)
+//		{
+//			//draw a blue debug sphere
+//			DrawDebugSphere(GetWorld(), GetActorLocation(), SphereComponent->GetScaledSphereRadius() + 1, 10, FColor::Blue, false, 0);
+//		}
+//
+//		//return to prevent further execution
+//		return;
+//	}
+//
+//	//check if we're sliding
+//	if (DeltaTime <= /*2 / 7 **/ InitialRelativeVelocity.Length() / TableSlidingFrictionCoefficient * (GetWorld()->GetGravityZ() / 100))
+//	{
+//		//set the physics state to sliding
+//		SetBoolPhysicsState(Ebps_Sliding);
+//
+//		//check if we're in debug mode
+//		if (bDebugMode && bDisplayPhysicsState)
+//		{
+//			//draw a green debug sphere
+//			DrawDebugSphere(GetWorld(), GetActorLocation(), SphereComponent->GetScaledSphereRadius() + 1, 10, FColor::Green, false, 0);
+//		}
+//
+//		//return to prevent further execution
+//		return;
+//	}
+//
+//	//check if we're rolling
+//	if (DeltaTime <= CurrentVelocity.Length() * TableRollingFrictionCoefficient)
+//	{
+//		//set the physics state to rolling
+//		SetBoolPhysicsState(Ebps_Rolling);
+//
+//		//check if we're in debug mode
+//		if (bDebugMode && bDisplayPhysicsState)
+//		{
+//			//draw a yellow debug sphere
+//			DrawDebugSphere(GetWorld(), GetActorLocation(), SphereComponent->GetScaledSphereRadius() + 1, 10, FColor::Yellow, false, 0);
+//		}
+//
+//		//return to prevent further execution
+//		return;
+//	}
+//
+//	//set the physics state to stationary
+//	SetBoolPhysicsState(Ebps_Stationary);
+//}
+//
+//void ABallActor::UpdatePhysicsVariables(const float DeltaTime)
+//{
+//	//check the physics state
+//	switch (PhysicsState)
+//	{
+//		case Ebps_Spinning:
+//		{
+//			//set the angular velocity variable
+//			SetBallAngularVelocity(FVector(0, 0, (AngularVelocity.Z - 5 * TableSpinningFrictionCoefficient * (GetWorld()->GetGravityZ() / 100) / 2) * DeltaTime));
+//
+//			//break
+//			break;
+//		}
+//
+//		case Ebps_Rolling:
+//		{
+//			//get the linear velocity magnitude
+//			const float VelocityMagnitute = GetBallVelocity().Size() - TableRollingFrictionCoefficient * (-GetWorld()->GetGravityZ() / 100) * DeltaTime;
+//
+//			//set the velocity
+//			SetBallVelocity(GetBallVelocity().GetSafeNormal() * VelocityMagnitute);
+//
+//			//set the angular velocity variable
+//			SetBallAngularVelocity(FVector(0, GetBallVelocity().X / SphereComponent->GetScaledSphereRadius(), AngularVelocity.Z - 5 * TableRollingFrictionCoefficient * (-GetWorld()->GetGravityZ() / 100) * DeltaTime / (2 * SphereComponent->GetScaledSphereRadius())));
+//
+//			//break
+//			break;
+//		}
+//
+//		case Ebps_Sliding:
+//		{
+//			//storage for the world gravityz
+//			const float WorldGravityZ = -GetWorld()->GetGravityZ() / 100;
+//
+//			//set the velocity
+//			SetBallVelocity(GetBallVelocity() - TableSlidingFrictionCoefficient * WorldGravityZ * DeltaTime * InitialRelativeVelocity.GetSafeNormal());
+//
+//			//update the initial relative velocity
+//			InitialRelativeVelocity = GetBallVelocity() - 2 / 7 * TableSlidingFrictionCoefficient * WorldGravityZ * DeltaTime * InitialRelativeVelocity.GetSafeNormal();
+//
+//			//set the angular velocity variable
+//			SetBallAngularVelocity(FVector(
+//				AngularVelocity.X - 5 * TableSlidingFrictionCoefficient * WorldGravityZ * DeltaTime / (2 * SphereComponent->GetScaledSphereRadius()),
+//				AngularVelocity.Y - 5 * TableSlidingFrictionCoefficient * WorldGravityZ * DeltaTime / (2 * SphereComponent->GetScaledSphereRadius()),
+//				AngularVelocity.Z - 5 * TableSpinningFrictionCoefficient * WorldGravityZ * DeltaTime / (2 * SphereComponent->GetScaledSphereRadius())));
+//
+//			//break
+//			break;
+//		}
+//		default: ;
+//	}
+//}
 
 void ABallActor::SetBoolPhysicsState(const TEnumAsByte<EBallPhysicsState> NewPhysicsState)
 {
@@ -428,23 +437,23 @@ bool ABallActor::IsOutsideTable() const
 	return !UKismetMathLibrary::IsPointInBox(GetActorLocation(), BoxPosition, BoxSize);
 }
 
-float ABallActor::GetFrictionBetweenBalls(const TObjectPtr<ABallActor>& OtherBallActor) const
-{
-	//our velocity projected onto the x axis
-	FVector v1_c = GetBallVelocity() + FVector::CrossProduct(GetBallAngularVelocity(), SphereComponent->GetScaledSphereRadius() * FVector::XAxisVector) - FVector(GetBallVelocity().X, 0, 0);
-
-	//the other balls velocity projected onto the x axis
-	FVector v2_c = OtherBallActor->GetBallVelocity() + FVector::CrossProduct(OtherBallActor->GetBallAngularVelocity(), OtherBallActor->SphereComponent->GetScaledSphereRadius() * -FVector::XAxisVector) - FVector(OtherBallActor->GetBallVelocity().X, 0, 0);
-
-	//the relative surface speed
-    float relative_surface_speed = (v1_c - v2_c).Length();
-
-	//calculate the friction between the 2 balls
-    float ReturnFriction = BallBallFrictionA + BallBallFrictionB * FMath::Pow(-BallBallFrictionC * relative_surface_speed, 2);
-
-	//return the friction
-	return ReturnFriction;
-}
+//float ABallActor::GetFrictionBetweenBalls(const TObjectPtr<ABallActor>& OtherBallActor) const
+//{
+//	//our velocity projected onto the x axis
+//	FVector v1_c = GetBallVelocity() + FVector::CrossProduct(GetBallAngularVelocity(), SphereComponent->GetScaledSphereRadius() * FVector::XAxisVector) - FVector(GetBallVelocity().X, 0, 0);
+//
+//	//the other balls velocity projected onto the x axis
+//	FVector v2_c = OtherBallActor->GetBallVelocity() + FVector::CrossProduct(OtherBallActor->GetBallAngularVelocity(), OtherBallActor->SphereComponent->GetScaledSphereRadius() * -FVector::XAxisVector) - FVector(OtherBallActor->GetBallVelocity().X, 0, 0);
+//
+//	//the relative surface speed
+//    float relative_surface_speed = (v1_c - v2_c).Length();
+//
+//	//calculate the friction between the 2 balls
+//    float ReturnFriction = BallBallFrictionA + BallBallFrictionB * FMath::Pow(-BallBallFrictionC * relative_surface_speed, 2);
+//
+//	//return the friction
+//	return ReturnFriction;
+//}
 
 void ABallActor::DrawVelChangeDebugArrows()
 {
@@ -467,207 +476,177 @@ void ABallActor::DrawVelChangeDebugArrows()
 	DrawDebugDirectionalArrow(GetWorld(), GetActorLocation(), GetActorLocation() + GetBallVelocity(), 100, NewVelColour, UniqueDebugArrows, 5, DepthPriority, Thickness);
 }
 
-bool ABallActor::ProcessBallHit(AActor* OtherActor, const FHitResult& Hit)
-{
-	//check if the other actor is not a ball actor
-	if (!OtherActor->IsA(StaticClass()))
-	{
-		//return false
-		return false;
-	}
-
-	//get the other ball actor
-	const TObjectPtr<ABallActor> OtherBallActor = Cast<ABallActor>(OtherActor);
-
-	//check if we're only processing collisions on the highest speed actor and the other balls velocity is greater than our velocity
-	if (bOnlyProcessHighestSpeedCollision && GetBallVelocity().Length() < OtherBallActor->GetBallVelocity().Length())
-	{
-		//return early to prevent further execution
-		return false;
-	}
-
-	//check if the other actor is a cue ball
-	if (OtherActor-ActorHasTag(FName("CueBallTag")))
-	{
-		//get the cue ball
-		const TObjectPtr<ABallActor> CueBall = Cast<ABallActor>(OtherActor);
-
-		//loop through the ball upgrade data assets
-		for (const auto BallUpgradeDataAsset : BallUpgradeDataAssets)
-		{
-			//call the OnCueBallHit function
-			BallUpgradeDataAsset.Get()->GetDefaultObject<UBallUpgradeDataAsset>()->OnCueBallHit(this, CueBall, Hit);
-		}
-	}
-	else
-	{
-		//loop through the ball upgrade data assets
-		for (const auto BallUpgradeDataAsset : BallUpgradeDataAssets)
-		{
-			//call the OnNormalBallHit function
-			BallUpgradeDataAsset.Get()->GetDefaultObject<UBallUpgradeDataAsset>()->OnNormalBallHit(this, OtherBallActor, Hit);
-		}
-	}
-
-	//check if we're not using custom collision response
-	if (!bUseCustomCollisionResponse)
-	{
-		//return early to prevent further execution
-		return true;
-	}
-
-	//get the average restitution between the 2 balls
-	float e_b = (this->BallRestitution + OtherBallActor->BallRestitution) / 2;
-
-	//the delta between the 2 balls positions
-	const FVector DeltaCenters = OtherBallActor->GetActorLocation() - GetActorLocation();
-
-	//the tetha between the 2 balls
-	const float Angle = FMath::Acos(FVector::DotProduct(DeltaCenters.GetSafeNormal(), FVector::XAxisVector));
-	
-	//the delta quaternion for translating to a reference frame where the vector between the 2 balls is the x axis
-	const FQuat DeltaQuat = FQuat(FVector::ZAxisVector, Angle);
-
-	//storage for our old velocities
-	FVector OldVel = GetBallVelocity();
-	FVector OtherBallOldVel = OtherBallActor->GetBallVelocity();
-	FVector OldAngVel = GetBallAngularVelocity();
-	FVector OtherBallOldAngVel = OtherBallActor->GetBallAngularVelocity();
-
-	//the velocity of the 2 balls in the reference frame
-	FVector OurVel = DeltaQuat.UnrotateVector(OldVel);
-	FVector OtherBallVel = DeltaQuat.UnrotateVector(OtherBallOldVel);
-	FVector OurAngVel = DeltaQuat.UnrotateVector(OldAngVel);
-	FVector OtherBallAngVel = DeltaQuat.UnrotateVector(OtherBallOldAngVel);
-
-	//the normal component of the velocities
-	float OurNormComp = 0.5 * (1 - e_b) * FVector::DotProduct(OurVel, FVector::XAxisVector) + (1 + e_b) * FVector::DotProduct(OtherBallVel, FVector::XAxisVector);
-	float OtherBallNormComp = 0.5 * (1 + e_b) * FVector::DotProduct(OurVel, FVector::XAxisVector) + (1 - e_b) * FVector::DotProduct(OtherBallVel, FVector::XAxisVector);
-
-	//the normal component magnitude
-	float NormCompMag = FMath::Abs(OurNormComp - OtherBallNormComp);
-
-	//discarding the normal components for now
-	OurVel.X = 0;
-	OtherBallVel.X = 0;
-
-	//storage for the old velocities
-	FVector OurVel_f = OurVel;
-	FVector OtherBallVel_f = OtherBallVel;
-	FVector OurAngVel_f = OurAngVel;
-	FVector OtherBallAngVel_f = OtherBallAngVel;
-
-	//the contact point velocities
-	FVector V1_C = OurVel + FVector::CrossProduct(OurAngVel, SphereComponent->GetScaledSphereRadius() * FVector::XAxisVector);
-	FVector V2_C = OtherBallVel + FVector::CrossProduct(OtherBallAngVel, OtherBallActor->SphereComponent->GetScaledSphereRadius() * -FVector::XAxisVector);
-
-	//the relative contact velocity
-	FVector V12_C = V1_C - V2_C;
-
-	//the new relative contact velocity
-	FVector V12_C_Slip = V1_C - V2_C;
-
-	////print our variables
-	//UE_LOG(LogTemp, Log, TEXT("ABallActor::ProcessBallHit: OurVel: %s, OtherBallVel: %s, OurAngVel: %s, OtherBallAngVel: %s, OurNormComp: %f, OtherBallNormComp: %f, NormCompMag: %f, V1_C: %s, V2_C: %s, V12_C: %s"), *OurVel.ToString(), *OtherBallVel.ToString(), *OurAngVel.ToString(), *OtherBallAngVel.ToString(), OurNormComp, OtherBallNormComp, NormCompMag, *V1_C.ToString(), *V2_C.ToString(), *V12_C.ToString());
-
-	//whether or not the balls have relative velocity against each other that is greater than the threshold
-	bool HasRelativeVel = V12_C.Length() > 1e-9;
-
-	//check if the balls have relative velocity
-	if (HasRelativeVel)
-	{
-		//tangent components for the balls
-		FVector D_V1_t = GetFrictionBetweenBalls(OtherBallActor) * NormCompMag * -V12_C.GetSafeNormal();
-		FVector D_W1 = 2.5 / SphereComponent->GetScaledSphereRadius() * FVector::CrossProduct(FVector::XAxisVector, D_V1_t);
-
-		//add the tangent components to the balls velocities
-		OurVel_f += D_V1_t;
-		OurAngVel_f += D_W1;
-		OtherBallVel_f -= D_V1_t;
-		OtherBallAngVel_f += D_W1;
-
-		//calculate the new velocities at the contact points
-		V1_C = OurVel_f + FVector::CrossProduct(OurAngVel_f, SphereComponent->GetScaledSphereRadius() * FVector::XAxisVector);
-		V2_C = OtherBallVel_f + FVector::CrossProduct(OtherBallAngVel_f, OtherBallActor->SphereComponent->GetScaledSphereRadius() * -FVector::XAxisVector);
-
-		//calculate the new relative contact velocity
-		V12_C_Slip = V1_C - V2_C;
-	}
-
-	//check if we don't have relative velocity or the relative contct velocity has changed
-	if (!HasRelativeVel || FVector::DotProduct(V12_C, V12_C_Slip) <= 0)
-	{
-		//the velocity tangent
-		FVector TangentVel = -(1.0 / 7.0) * (
-		    OurVel - OtherBallVel + SphereComponent->GetScaledSphereRadius() * FVector::CrossProduct(OurAngVel + OtherBallAngVel, FVector::UnitX())
-		);
-
-		//the angular velocity tangent
-		FVector TangentAngVel = -(5.0 / 14.0) * (
-            FVector::CrossProduct(FVector::UnitX() * OurVel - OtherBallVel, OurVel - OtherBallVel) / SphereComponent->GetScaledSphereRadius() + OurAngVel + OtherBallAngVel
-        );
-
-		//add the tangent components to the balls velocities
-		OurVel_f = OurVel + TangentVel;
-		OurAngVel_f = OurAngVel + TangentAngVel;
-		OtherBallVel_f = OtherBallVel - TangentVel;
-		OtherBallAngVel_f = OtherBallAngVel + TangentAngVel;
-	}
-
-	//reintroduce the final normal components
-	OurVel_f.X = OurNormComp;
-	OtherBallVel_f.X = OtherBallNormComp;
-
-	//rotate the velocities back to the world frame
-	OurVel_f = DeltaQuat.RotateVector(OurVel_f);
-	OurAngVel_f = DeltaQuat.RotateVector(OurAngVel_f);
-	OtherBallVel_f = DeltaQuat.RotateVector(OtherBallVel_f);
-	OtherBallAngVel_f = DeltaQuat.RotateVector(OtherBallAngVel_f);
-
-	//remove any z components from the velocities
-	OurVel_f.Z = 0;
-	OtherBallVel_f.Z = 0;
-
-	//the ratio between the sum of the old velocities and the sum of the new velocities
-	float SpeedRatio = (OurVel.Size() + OtherBallVel.Size()) * MaxRelativeSpeedGain / (OurVel_f.Size() + OtherBallVel_f.Size());
-
-	//check if the sum of our new velocities are bigger than the sum of the old velocities
-	if (MaxRelativeSpeedGain > 0 && (OurVel_f.Size() + OtherBallVel_f.Size()) * MaxRelativeSpeedGain > GetBallVelocity().Size() + OtherBallActor->GetBallVelocity().Size())
-	{
-		////the ratio between our speed and the other balls speed
-		//float Ratio = OurVel_f.Size() / OtherBallVel_f.Size();
-
-		//adjust the velocities
-		OurVel_f *= SpeedRatio;
-		OtherBallVel_f *= SpeedRatio;
-	}
-
-	////set the new velocities
-	//this->SetBallVelocity(OurVel_f * BallBallCollisionMultiplier);
-	//OtherBallActor->SetBallVelocity(OtherBallVel_f * BallBallCollisionMultiplier);
-
-	//set the suggested velocities
-	SuggestedVelocity = OurVel_f * BallBallCollisionMultiplier;
-	OtherBallSuggestedVelocity = OtherBallVel_f * BallBallCollisionMultiplier;
-
-	//set the suggested angular velocities
-	SuggestedAngularVelocity = OurAngVel_f;
-	OtherBallSuggestedAngularVelocity = OtherBallAngVel_f;
-
-	//set both balls to be rolling
-	SetBoolPhysicsState(Ebps_Rolling);
-	OtherBallActor->SetBoolPhysicsState(Ebps_Rolling);
-
-	//check if we're in debug mode and we're displaying the debug arrows
-	if (bDebugMode && BallColDebugArrows)
-	{
-		//draw the debug arrows
-		DrawVelChangeDebugArrows();
-	}
-
-	//return true
-	return true;
-}
+//bool ABallActor::ProcessBallHit(AActor* OtherActor, const FHitResult& Hit)
+//{
+//	//check if the other actor is not a ball actor
+//	if (!OtherActor->IsA(StaticClass()))
+//	{
+//		//return false
+//		return false;
+//	}
+//
+//	//get the other ball actor
+//	const TObjectPtr<ABallActor> OtherBallActor = Cast<ABallActor>(OtherActor);
+//
+//	//check if we're not using custom collision response
+//	if (!bUseCustomCollisionResponse)
+//	{
+//		//return early to prevent further execution
+//		return true;
+//	}
+//
+//	//get the average restitution between the 2 balls
+//	float e_b = (this->BallRestitution + OtherBallActor->BallRestitution) / 2;
+//
+//	//the delta between the 2 balls positions
+//	const FVector DeltaCenters = OtherBallActor->GetActorLocation() - GetActorLocation();
+//
+//	//the tetha between the 2 balls
+//	const float Angle = FMath::Acos(FVector::DotProduct(DeltaCenters.GetSafeNormal(), FVector::XAxisVector));
+//	
+//	//the delta quaternion for translating to a reference frame where the vector between the 2 balls is the x axis
+//	const FQuat DeltaQuat = FQuat(FVector::ZAxisVector, Angle);
+//
+//	//storage for our old velocities
+//	FVector OldVel = GetBallVelocity();
+//	FVector OtherBallOldVel = OtherBallActor->GetBallVelocity();
+//	FVector OldAngVel = GetBallAngularVelocity();
+//	FVector OtherBallOldAngVel = OtherBallActor->GetBallAngularVelocity();
+//
+//	//the velocity of the 2 balls in the reference frame
+//	FVector OurVel = DeltaQuat.UnrotateVector(OldVel);
+//	FVector OtherBallVel = DeltaQuat.UnrotateVector(OtherBallOldVel);
+//	FVector OurAngVel = DeltaQuat.UnrotateVector(OldAngVel);
+//	FVector OtherBallAngVel = DeltaQuat.UnrotateVector(OtherBallOldAngVel);
+//
+//	//the normal component of the velocities
+//	float OurNormComp = 0.5 * (1 - e_b) * FVector::DotProduct(OurVel, FVector::XAxisVector) + (1 + e_b) * FVector::DotProduct(OtherBallVel, FVector::XAxisVector);
+//	float OtherBallNormComp = 0.5 * (1 + e_b) * FVector::DotProduct(OurVel, FVector::XAxisVector) + (1 - e_b) * FVector::DotProduct(OtherBallVel, FVector::XAxisVector);
+//
+//	//the normal component magnitude
+//	float NormCompMag = FMath::Abs(OurNormComp - OtherBallNormComp);
+//
+//	//discarding the normal components for now
+//	OurVel.X = 0;
+//	OtherBallVel.X = 0;
+//
+//	//storage for the old velocities
+//	FVector OurVel_f = OurVel;
+//	FVector OtherBallVel_f = OtherBallVel;
+//	FVector OurAngVel_f = OurAngVel;
+//	FVector OtherBallAngVel_f = OtherBallAngVel;
+//
+//	//the contact point velocities
+//	FVector V1_C = OurVel + FVector::CrossProduct(OurAngVel, SphereComponent->GetScaledSphereRadius() * FVector::XAxisVector);
+//	FVector V2_C = OtherBallVel + FVector::CrossProduct(OtherBallAngVel, OtherBallActor->SphereComponent->GetScaledSphereRadius() * -FVector::XAxisVector);
+//
+//	//the relative contact velocity
+//	FVector V12_C = V1_C - V2_C;
+//
+//	//the new relative contact velocity
+//	FVector V12_C_Slip = V1_C - V2_C;
+//
+//	////print our variables
+//	//UE_LOG(LogTemp, Log, TEXT("ABallActor::ProcessBallHit: OurVel: %s, OtherBallVel: %s, OurAngVel: %s, OtherBallAngVel: %s, OurNormComp: %f, OtherBallNormComp: %f, NormCompMag: %f, V1_C: %s, V2_C: %s, V12_C: %s"), *OurVel.ToString(), *OtherBallVel.ToString(), *OurAngVel.ToString(), *OtherBallAngVel.ToString(), OurNormComp, OtherBallNormComp, NormCompMag, *V1_C.ToString(), *V2_C.ToString(), *V12_C.ToString());
+//
+//	//whether or not the balls have relative velocity against each other that is greater than the threshold
+//	bool HasRelativeVel = V12_C.Length() > 1e-9;
+//
+//	//check if the balls have relative velocity
+//	if (HasRelativeVel)
+//	{
+//		//tangent components for the balls
+//		FVector D_V1_t = GetFrictionBetweenBalls(OtherBallActor) * NormCompMag * -V12_C.GetSafeNormal();
+//		FVector D_W1 = 2.5 / SphereComponent->GetScaledSphereRadius() * FVector::CrossProduct(FVector::XAxisVector, D_V1_t);
+//
+//		//add the tangent components to the balls velocities
+//		OurVel_f += D_V1_t;
+//		OurAngVel_f += D_W1;
+//		OtherBallVel_f -= D_V1_t;
+//		OtherBallAngVel_f += D_W1;
+//
+//		//calculate the new velocities at the contact points
+//		V1_C = OurVel_f + FVector::CrossProduct(OurAngVel_f, SphereComponent->GetScaledSphereRadius() * FVector::XAxisVector);
+//		V2_C = OtherBallVel_f + FVector::CrossProduct(OtherBallAngVel_f, OtherBallActor->SphereComponent->GetScaledSphereRadius() * -FVector::XAxisVector);
+//
+//		//calculate the new relative contact velocity
+//		V12_C_Slip = V1_C - V2_C;
+//	}
+//
+//	//check if we don't have relative velocity or the relative contct velocity has changed
+//	if (!HasRelativeVel || FVector::DotProduct(V12_C, V12_C_Slip) <= 0)
+//	{
+//		//the velocity tangent
+//		FVector TangentVel = -(1.0 / 7.0) * (
+//		    OurVel - OtherBallVel + SphereComponent->GetScaledSphereRadius() * FVector::CrossProduct(OurAngVel + OtherBallAngVel, FVector::UnitX())
+//		);
+//
+//		//the angular velocity tangent
+//		FVector TangentAngVel = -(5.0 / 14.0) * (
+//            FVector::CrossProduct(FVector::UnitX() * OurVel - OtherBallVel, OurVel - OtherBallVel) / SphereComponent->GetScaledSphereRadius() + OurAngVel + OtherBallAngVel
+//        );
+//
+//		//add the tangent components to the balls velocities
+//		OurVel_f = OurVel + TangentVel;
+//		OurAngVel_f = OurAngVel + TangentAngVel;
+//		OtherBallVel_f = OtherBallVel - TangentVel;
+//		OtherBallAngVel_f = OtherBallAngVel + TangentAngVel;
+//	}
+//
+//	//reintroduce the final normal components
+//	OurVel_f.X = OurNormComp;
+//	OtherBallVel_f.X = OtherBallNormComp;
+//
+//	//rotate the velocities back to the world frame
+//	OurVel_f = DeltaQuat.RotateVector(OurVel_f);
+//	OurAngVel_f = DeltaQuat.RotateVector(OurAngVel_f);
+//	OtherBallVel_f = DeltaQuat.RotateVector(OtherBallVel_f);
+//	OtherBallAngVel_f = DeltaQuat.RotateVector(OtherBallAngVel_f);
+//
+//	//remove any z components from the velocities
+//	OurVel_f.Z = 0;
+//	OtherBallVel_f.Z = 0;
+//
+//	//the ratio between the sum of the old velocities and the sum of the new velocities
+//	float SpeedRatio = (OurVel.Size() + OtherBallVel.Size()) * MaxRelativeSpeedGain / (OurVel_f.Size() + OtherBallVel_f.Size());
+//
+//	//check if the sum of our new velocities are bigger than the sum of the old velocities
+//	if (MaxRelativeSpeedGain > 0 && (OurVel_f.Size() + OtherBallVel_f.Size()) * MaxRelativeSpeedGain > GetBallVelocity().Size() + OtherBallActor->GetBallVelocity().Size())
+//	{
+//		////the ratio between our speed and the other balls speed
+//		//float Ratio = OurVel_f.Size() / OtherBallVel_f.Size();
+//
+//		//adjust the velocities
+//		OurVel_f *= SpeedRatio;
+//		OtherBallVel_f *= SpeedRatio;
+//	}
+//
+//	////set the new velocities
+//	//this->SetBallVelocity(OurVel_f * BallBallCollisionMultiplier);
+//	//OtherBallActor->SetBallVelocity(OtherBallVel_f * BallBallCollisionMultiplier);
+//
+//	//set the suggested velocities
+//	SuggestedVelocity = OurVel_f * BallBallCollisionMultiplier;
+//	OtherBallSuggestedVelocity = OtherBallVel_f * BallBallCollisionMultiplier;
+//
+//	//set the suggested angular velocities
+//	SuggestedAngularVelocity = OurAngVel_f;
+//	OtherBallSuggestedAngularVelocity = OtherBallAngVel_f;
+//
+//	//set both balls to be rolling
+//	SetBoolPhysicsState(Ebps_Rolling);
+//	OtherBallActor->SetBoolPhysicsState(Ebps_Rolling);
+//
+//	//check if we're in debug mode and we're displaying the debug arrows
+//	if (bDebugMode && BallColDebugArrows)
+//	{
+//		//draw the debug arrows
+//		DrawVelChangeDebugArrows();
+//	}
+//
+//	//return true
+//	return true;
+//}
 
 bool ABallActor::ProcessHit(const FHitResult& HitResult, AActor* OtherActor)
 {
@@ -693,6 +672,36 @@ bool ABallActor::ProcessHit(const FHitResult& HitResult, AActor* OtherActor)
 	{
 		//cast the other actor to a ball actor
 		const TObjectPtr<ABallActor> OtherBallActor = Cast<ABallActor>(OtherActor);
+
+		//check if we're only processing collisions on the highest speed actor and the other balls velocity is greater than our velocity
+		if (bOnlyProcessHighestSpeedCollision && GetBallVelocity().Length() < OtherBallActor->GetBallVelocity().Length())
+		{
+			//return early to prevent further execution
+			return false;
+		}
+
+		//check if the other actor is a cue ball
+		if (OtherActor-ActorHasTag(FName("CueBallTag")))
+		{
+			//get the cue ball
+			const TObjectPtr<ABallActor> CueBall = Cast<ABallActor>(OtherActor);
+
+			//loop through the ball upgrade data assets
+			for (const auto BallUpgradeDataAsset : BallUpgradeDataAssets)
+			{
+				//call the OnCueBallHit function
+				BallUpgradeDataAsset.Get()->GetDefaultObject<UBallUpgradeDataAsset>()->OnCueBallHit(this, CueBall, HitResult);
+			}
+		}
+		else
+		{
+			//loop through the ball upgrade data assets
+			for (const auto BallUpgradeDataAsset : BallUpgradeDataAssets)
+			{
+				//call the OnNormalBallHit function
+				BallUpgradeDataAsset.Get()->GetDefaultObject<UBallUpgradeDataAsset>()->OnNormalBallHit(this, OtherBallActor, HitResult);
+			}
+		}
 
 		//check if we're in debug mode and we're drawing a debug sphere for this ball right before calling the physics solver's ball collision function
 		if (bDebugMode && SingleTickBallColDebugSphere)
@@ -735,33 +744,23 @@ bool ABallActor::ProcessHit(const FHitResult& HitResult, AActor* OtherActor)
 			return false;
 		}
 
-		//check if we don't have a valid physics data blueprint
-		if (!PhysicsSolverClass->IsValidLowLevelFast())
-		{
-			//return the reflection vector
-			return false;
-		}
-
 		//get the physics data blueprint
 		const TObjectPtr<UPhysicsSolverBlueprintBase> PhysicsDataBP = PhysicsSolverClass.GetDefaultObject();
 
-		//process the hit
-		ProcessBallHit(OtherBallActor, HitResult);
-
 		//get the exit direction
-		const FVector ExitDirection = PhysicsDataBP->BallCollisionSetExitDirection(SuggestedVelocity, this, OtherBallActor, HitResult);
+		const FVector ExitDirection = PhysicsDataBP->BallCollisionSetExitDirection(this, OtherBallActor, HitResult);
 
 		//get the exit speed
-		const float ExitSpeed = PhysicsDataBP->BallCollisionSetExitSpeed(SuggestedVelocity, this, OtherBallActor, ExitDirection, HitResult);
+		const float ExitSpeed = PhysicsDataBP->BallCollisionSetExitSpeed(this, OtherBallActor, ExitDirection, HitResult);
 
 		//get our exit velocity after the ball collision
 		FVector ExitVelocity = ExitDirection * ExitSpeed;
 
 		//get the exit direction
-		const FVector OtherBallExitDirection = PhysicsDataBP->OtherBallCollisionSetExitDirection(OtherBallSuggestedVelocity, this, OtherBallActor, HitResult);
+		const FVector OtherBallExitDirection = PhysicsDataBP->OtherBallCollisionSetExitDirection(this, OtherBallActor, HitResult);
 
 		//get the exit speed
-		const float OtherBallExitSpeed = PhysicsDataBP->OtherBallCollisionSetExitSpeed(OtherBallSuggestedVelocity, this, OtherBallActor, ExitDirection, HitResult);
+		const float OtherBallExitSpeed = PhysicsDataBP->OtherBallCollisionSetExitSpeed(this, OtherBallActor, ExitDirection, HitResult);
 
 		//get the exit velocity for the other ball
 		FVector OtherBallExitVelocity = OtherBallExitDirection * OtherBallExitSpeed;
@@ -781,6 +780,10 @@ bool ABallActor::ProcessHit(const FHitResult& HitResult, AActor* OtherActor)
 			}
 		}
 
+		//set both balls to be rolling
+		SetBoolPhysicsState(Ebps_Rolling);
+		OtherBallActor->SetBoolPhysicsState(Ebps_Rolling);
+
 		//set our new velocity
 		SetBallVelocity(ExitVelocity);
 
@@ -794,39 +797,46 @@ bool ABallActor::ProcessHit(const FHitResult& HitResult, AActor* OtherActor)
 	//check if we're overlapping a goal actor
 	if (OtherActor->IsA(AGoalActor::StaticClass()))
 	{
+		//cast the other actor to a goal actor
+		const TObjectPtr<AGoalActor> GoalActor = Cast<AGoalActor>(OtherActor);
+
+		//iterate over the ball upgrade data assets
+		for (const auto BallUpgradeDataAsset : BallUpgradeDataAssets)
+		{
+			//call the OnWallHit function
+			BallUpgradeDataAsset.Get()->GetDefaultObject<UBallUpgradeDataAsset>()->OnGoal(this, GoalActor);
+		}
+
 		//return early to prevent further execution
 		return true;
 	}
 
 	//assume we're overlapping a wall actor
 
-	//check if we don't have a valid physics data blueprint
-	if (!PhysicsSolverClass->IsValidLowLevelFast())
+	//iterate over the ball upgrade data assets
+	for (const auto BallUpgradeDataAsset : BallUpgradeDataAssets)
 	{
-		//return the reflection vector
-		return false;
+		//call the OnWallHit function
+		BallUpgradeDataAsset.Get()->GetDefaultObject<UBallUpgradeDataAsset>()->OnWallHit(this, HitResult.Component.Get(), HitResult);
 	}
-
-	//process the hit
-	ProcessWallHit(HitResult);
 
 	//get the physics data blueprint
 	const TObjectPtr<UPhysicsSolverBlueprintBase> PhysicsDataBP = PhysicsSolverClass.GetDefaultObject();
 
 	//get the exit direction
-	const FVector ExitDirection = PhysicsDataBP->WallCollisionSetExitDirection(SuggestedVelocity, this, HitResult);
+	const FVector ExitDirection = PhysicsDataBP->WallCollisionSetExitDirection(this, HitResult);
 
 	//get the exit speed
-	const float ExitSpeed = PhysicsDataBP->WallCollisionSetExitSpeed(SuggestedVelocity, this, HitResult);
+	const float ExitSpeed = PhysicsDataBP->WallCollisionSetExitSpeed(this, HitResult);
 
 	//get the exit velocity after the wall collision
 	const FVector ExitVelocity = ExitDirection * ExitSpeed;
 
 	//get the angular exit direction
-	const FVector AngularExitDirection = PhysicsDataBP->WallCollisionSetAngularExitDirection(SuggestedAngularVelocity, this, HitResult);
+	const FVector AngularExitDirection = PhysicsDataBP->WallCollisionSetAngularExitDirection(this, HitResult);
 
 	//get the angular exit speed
-	const float AngularExitSpeed = PhysicsDataBP->WallCollisionSetAngularExitSpeed(SuggestedAngularVelocity, this, HitResult);
+	const float AngularExitSpeed = PhysicsDataBP->WallCollisionSetAngularExitSpeed(this, HitResult);
 
 	//get the angular exit velocity after the wall collision
 	const FVector AngularExitVelocity = AngularExitDirection * AngularExitSpeed;
@@ -844,7 +854,7 @@ bool ABallActor::ProcessHit(const FHitResult& HitResult, AActor* OtherActor)
 	//set our new angular velocity
 	SetBallAngularVelocity(AngularExitVelocity);
 
-	return false;
+	return true;
 }
 
 void ABallActor::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -852,194 +862,194 @@ void ABallActor::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 	ProcessHit(SweepResult, OtherActor);
 }
 
-void ABallActor::ProcessWallHit(const FHitResult& Hit)
-{
-	//check if the other actor is a goal actor
-	if (Hit.GetActor()->IsA(AGoalActor::StaticClass()))
-	{
-		//return early to prevent further execution
-		return;
-	}
-
-	//iterate over the ball upgrade data assets
-	for (const auto BallUpgradeDataAsset : BallUpgradeDataAssets)
-	{
-		//call the OnWallHit function
-		BallUpgradeDataAsset.Get()->GetDefaultObject<UBallUpgradeDataAsset>()->OnWallHit(this, Hit.Component.Get(), Hit);
-	}
-
-	//check if we're not using custom collision response
-	if (!bUseCustomCollisionResponse)
-	{
-		//return early to prevent further execution
-		return;
-	}
-
-	//the normal of the hit reversed
-	const FVector ReversedNormal = Hit.ImpactNormal;
-
-	//the angle between the normal and the x axis
-	const float Angle = FMath::Acos(FVector::DotProduct(ReversedNormal, FVector::XAxisVector));
-
-	//the angle quaternion
-	const FQuat AngleQuat = FQuat(FVector::ZAxisVector, Angle).GetNormalized();
-
-	////a 3x3 matrix with the actor location, velocity, and angular velocity transposed
-	//TArray rvw_R ={
-	//	FVector(/*GetActorLocation().X*/ 0, GetBallVelocity().X, GetBallAngularVelocity().X),
-	//	FVector(0, GetBallVelocity().Y, GetBallAngularVelocity().Y),
-	//	FVector(0, GetBallVelocity().Z, GetBallAngularVelocity().Z),
-	//};
-
-	TArray rvw_R ={
-		AngleQuat.UnrotateVector(GetActorLocation()),
-		AngleQuat.UnrotateVector(GetBallVelocity()),
-		AngleQuat.UnrotateVector(GetBallAngularVelocity()),
-	};
-
-	////rotate the matrix
-	//rvw_R = {
-	//	AngleQuat.UnrotateVector(rvw_R[0]),
-	//	AngleQuat.UnrotateVector(rvw_R[1]),
-	//	AngleQuat.UnrotateVector(rvw_R[2]),
-	//};
-
-	////transpose the matrix again
-	//rvw_R = {
-	//	FVector(rvw_R[0].X, rvw_R[1].X, rvw_R[2].X),
-	//	FVector(rvw_R[0].Y, rvw_R[1].Y, rvw_R[2].Y),
-	//	FVector(rvw_R[0].Z, rvw_R[1].Z, rvw_R[2].Z),
-	//};
-
-	//the second angle
-	const float SecondAngle = FMath::Acos(FVector::DotProduct(rvw_R[1].GetSafeNormal(), FVector::XAxisVector));
-
-	//the rotated velocity
-	const float phi = remainder(SecondAngle, 2 * UE_PI);
-
-	//get mu and e
-	const float mu = WallFriction;
-	const float e = WallRestitution;
-
-	//the angle between the hit normal and the z axis
-	const float theta_a = FMath::Asin((Hit.Location.Z - GetActorLocation().Z) / (SphereComponent->GetScaledSphereRadius() - 1));
-
-	//the angular component of the collision
-	const float sx = rvw_R[1].X * FMath::Sin(theta_a) - rvw_R[1].Z * FMath::Cos(theta_a) + SphereComponent->GetScaledSphereRadius() * rvw_R[2].Y;
-	const float sy = 
-		-rvw_R[1].Y
-	    - SphereComponent->GetScaledSphereRadius() * rvw_R[2].Z * FMath::Cos(theta_a)
-	    + SphereComponent->GetScaledSphereRadius() * rvw_R[2].X * FMath::Sin(theta_a);
-
-	//the energy component of the collision
-	const float c = rvw_R[1].X * FMath::Cos(theta_a);
-
-	//the angular momentum component of the collision
-	float II = .4 * BallMass * FMath::Pow(SphereComponent->GetScaledSphereRadius(), 2);
-	const float A = 7 / 2 / BallMass;
-	const float B = 1 / BallMass;
-
-    //the first and second check variables
-	const float PzE = (1 + e) * c / B;
-	const float PzS = FMath::Sqrt(FMath::Pow(sx, 2) + FMath::Pow(sy, 2)) / A;
-
-	float PX, PY, PZ;
-
-    if (PzS <= PzE)
-    {
-		//Sliding and sticking case
-		PX = -sx / A * FMath::Sin(theta_a) - (1 + e) * c / B * FMath::Cos(theta_a);
-        PY = sy / A;
-        PZ = sx / A * FMath::Cos(theta_a) - (1 + e) * c / B * FMath::Sin(theta_a);
-    }
-    else
-    {
-	    //Forward sliding case
-        PX = -mu * (1 + e) * c / B * FMath::Cos(phi) * FMath::Sin(theta_a) - (
-            1 + e
-        ) * c / B * FMath::Cos(theta_a);
-        PY = mu * (1 + e) * c / B * FMath::Sin(phi);
-        PZ = mu * (1 + e) * c / B * FMath::Cos(phi) * FMath::Cos(theta_a) - (
-            1 + e
-        ) * c / B * FMath::Sin(theta_a);
-    }
-
-    //Update velocity
-    rvw_R[1].X += PX / BallMass;
-    rvw_R[1].Y += PY / BallMass;
-    //rvw_R[1].Z += PZ / BallMass;
-
-    //Update angular velocity
-    rvw_R[2].X += -SphereComponent->GetScaledSphereRadius() / II * PY * FMath::Sin(theta_a);
-    rvw_R[2].Y += SphereComponent->GetScaledSphereRadius() / II * (PX * FMath::Sin(theta_a) - PZ * FMath::Cos(theta_a));
-    rvw_R[2].Z += SphereComponent->GetScaledSphereRadius() / II * PY * FMath::Cos(theta_a);
-
-	////transpose the matrix again
-	//TArray rvw_R2 = {
-	//	FVector(rvw_R[0].X, rvw_R[1].X, rvw_R[2].X),
-	//	FVector(rvw_R[0].Y, rvw_R[1].Y, rvw_R[2].Y),
-	//	FVector(rvw_R[0].Z, rvw_R[1].Z, rvw_R[2].Z),
-	//};
-
-	TArray rvw_R2 = {
-		rvw_R[0],
-		rvw_R[1],
-		rvw_R[2],
-	};
-
-	//unrotate the matrix
-	rvw_R2 = {
-		AngleQuat.RotateVector(rvw_R2[0]),
-		AngleQuat.RotateVector(rvw_R2[1]),
-		AngleQuat.RotateVector(rvw_R2[2]),
-	};
-
-	////transpose the matrix again
-	//rvw_R2 = {
-	//	FVector(rvw_R2[0].X, rvw_R2[1].X, rvw_R2[2].X),
-	//	FVector(rvw_R2[0].Y, rvw_R2[1].Y, rvw_R2[2].Y),
-	//	FVector(rvw_R2[0].Z, rvw_R2[1].Z, rvw_R2[2].Z),
-	//};
-
-	//set the new position
-	SetActorLocation(/*GetActorLocation() +*/ rvw_R2[0]);
-
-	////set the new velocity
-	//SetBallVelocity(FVector(rvw_R2[1].X, rvw_R2[1].Y, 0));
-
-	////set the new angular velocity
-	//SetBallAngularVelocity(rvw_R2[2]);
-
-	//set the suggested new velocity
-	SuggestedVelocity = FVector(rvw_R2[1].X, rvw_R2[1].Y, 0);
-
-	//set the suggested new angular velocity
-	SuggestedAngularVelocity = rvw_R2[2];
-
-	//check if we're in debug mode and we're displaying the debug arrows
-	if (bDebugMode && WallColDebugArrows)
-	{
-		//draw the debug arrows
-		DrawVelChangeDebugArrows();
-	}
-}
+//void ABallActor::ProcessWallHit(const FHitResult& Hit)
+//{
+//	//check if the other actor is a goal actor
+//	if (Hit.GetActor()->IsA(AGoalActor::StaticClass()))
+//	{
+//		//return early to prevent further execution
+//		return;
+//	}
+//
+//	//iterate over the ball upgrade data assets
+//	for (const auto BallUpgradeDataAsset : BallUpgradeDataAssets)
+//	{
+//		//call the OnWallHit function
+//		BallUpgradeDataAsset.Get()->GetDefaultObject<UBallUpgradeDataAsset>()->OnWallHit(this, Hit.Component.Get(), Hit);
+//	}
+//
+//	//check if we're not using custom collision response
+//	if (!bUseCustomCollisionResponse)
+//	{
+//		//return early to prevent further execution
+//		return;
+//	}
+//
+//	//the normal of the hit reversed
+//	const FVector ReversedNormal = Hit.ImpactNormal;
+//
+//	//the angle between the normal and the x axis
+//	const float Angle = FMath::Acos(FVector::DotProduct(ReversedNormal, FVector::XAxisVector));
+//
+//	//the angle quaternion
+//	const FQuat AngleQuat = FQuat(FVector::ZAxisVector, Angle).GetNormalized();
+//
+//	////a 3x3 matrix with the actor location, velocity, and angular velocity transposed
+//	//TArray rvw_R ={
+//	//	FVector(/*GetActorLocation().X*/ 0, GetBallVelocity().X, GetBallAngularVelocity().X),
+//	//	FVector(0, GetBallVelocity().Y, GetBallAngularVelocity().Y),
+//	//	FVector(0, GetBallVelocity().Z, GetBallAngularVelocity().Z),
+//	//};
+//
+//	TArray rvw_R ={
+//		AngleQuat.UnrotateVector(GetActorLocation()),
+//		AngleQuat.UnrotateVector(GetBallVelocity()),
+//		AngleQuat.UnrotateVector(GetBallAngularVelocity()),
+//	};
+//
+//	////rotate the matrix
+//	//rvw_R = {
+//	//	AngleQuat.UnrotateVector(rvw_R[0]),
+//	//	AngleQuat.UnrotateVector(rvw_R[1]),
+//	//	AngleQuat.UnrotateVector(rvw_R[2]),
+//	//};
+//
+//	////transpose the matrix again
+//	//rvw_R = {
+//	//	FVector(rvw_R[0].X, rvw_R[1].X, rvw_R[2].X),
+//	//	FVector(rvw_R[0].Y, rvw_R[1].Y, rvw_R[2].Y),
+//	//	FVector(rvw_R[0].Z, rvw_R[1].Z, rvw_R[2].Z),
+//	//};
+//
+//	//the second angle
+//	const float SecondAngle = FMath::Acos(FVector::DotProduct(rvw_R[1].GetSafeNormal(), FVector::XAxisVector));
+//
+//	//the rotated velocity
+//	const float phi = remainder(SecondAngle, 2 * UE_PI);
+//
+//	//get mu and e
+//	const float mu = WallFriction;
+//	const float e = WallRestitution;
+//
+//	//the angle between the hit normal and the z axis
+//	const float theta_a = FMath::Asin((Hit.Location.Z - GetActorLocation().Z) / (SphereComponent->GetScaledSphereRadius() - 1));
+//
+//	//the angular component of the collision
+//	const float sx = rvw_R[1].X * FMath::Sin(theta_a) - rvw_R[1].Z * FMath::Cos(theta_a) + SphereComponent->GetScaledSphereRadius() * rvw_R[2].Y;
+//	const float sy = 
+//		-rvw_R[1].Y
+//	    - SphereComponent->GetScaledSphereRadius() * rvw_R[2].Z * FMath::Cos(theta_a)
+//	    + SphereComponent->GetScaledSphereRadius() * rvw_R[2].X * FMath::Sin(theta_a);
+//
+//	//the energy component of the collision
+//	const float c = rvw_R[1].X * FMath::Cos(theta_a);
+//
+//	//the angular momentum component of the collision
+//	float II = .4 * BallMass * FMath::Pow(SphereComponent->GetScaledSphereRadius(), 2);
+//	const float A = 7 / 2 / BallMass;
+//	const float B = 1 / BallMass;
+//
+//    //the first and second check variables
+//	const float PzE = (1 + e) * c / B;
+//	const float PzS = FMath::Sqrt(FMath::Pow(sx, 2) + FMath::Pow(sy, 2)) / A;
+//
+//	float PX, PY, PZ;
+//
+//    if (PzS <= PzE)
+//    {
+//		//Sliding and sticking case
+//		PX = -sx / A * FMath::Sin(theta_a) - (1 + e) * c / B * FMath::Cos(theta_a);
+//        PY = sy / A;
+//        PZ = sx / A * FMath::Cos(theta_a) - (1 + e) * c / B * FMath::Sin(theta_a);
+//    }
+//    else
+//    {
+//	    //Forward sliding case
+//        PX = -mu * (1 + e) * c / B * FMath::Cos(phi) * FMath::Sin(theta_a) - (
+//            1 + e
+//        ) * c / B * FMath::Cos(theta_a);
+//        PY = mu * (1 + e) * c / B * FMath::Sin(phi);
+//        PZ = mu * (1 + e) * c / B * FMath::Cos(phi) * FMath::Cos(theta_a) - (
+//            1 + e
+//        ) * c / B * FMath::Sin(theta_a);
+//    }
+//
+//    //Update velocity
+//    rvw_R[1].X += PX / BallMass;
+//    rvw_R[1].Y += PY / BallMass;
+//    //rvw_R[1].Z += PZ / BallMass;
+//
+//    //Update angular velocity
+//    rvw_R[2].X += -SphereComponent->GetScaledSphereRadius() / II * PY * FMath::Sin(theta_a);
+//    rvw_R[2].Y += SphereComponent->GetScaledSphereRadius() / II * (PX * FMath::Sin(theta_a) - PZ * FMath::Cos(theta_a));
+//    rvw_R[2].Z += SphereComponent->GetScaledSphereRadius() / II * PY * FMath::Cos(theta_a);
+//
+//	////transpose the matrix again
+//	//TArray rvw_R2 = {
+//	//	FVector(rvw_R[0].X, rvw_R[1].X, rvw_R[2].X),
+//	//	FVector(rvw_R[0].Y, rvw_R[1].Y, rvw_R[2].Y),
+//	//	FVector(rvw_R[0].Z, rvw_R[1].Z, rvw_R[2].Z),
+//	//};
+//
+//	TArray rvw_R2 = {
+//		rvw_R[0],
+//		rvw_R[1],
+//		rvw_R[2],
+//	};
+//
+//	//unrotate the matrix
+//	rvw_R2 = {
+//		AngleQuat.RotateVector(rvw_R2[0]),
+//		AngleQuat.RotateVector(rvw_R2[1]),
+//		AngleQuat.RotateVector(rvw_R2[2]),
+//	};
+//
+//	////transpose the matrix again
+//	//rvw_R2 = {
+//	//	FVector(rvw_R2[0].X, rvw_R2[1].X, rvw_R2[2].X),
+//	//	FVector(rvw_R2[0].Y, rvw_R2[1].Y, rvw_R2[2].Y),
+//	//	FVector(rvw_R2[0].Z, rvw_R2[1].Z, rvw_R2[2].Z),
+//	//};
+//
+//	//set the new position
+//	SetActorLocation(/*GetActorLocation() +*/ rvw_R2[0]);
+//
+//	////set the new velocity
+//	//SetBallVelocity(FVector(rvw_R2[1].X, rvw_R2[1].Y, 0));
+//
+//	////set the new angular velocity
+//	//SetBallAngularVelocity(rvw_R2[2]);
+//
+//	//set the suggested new velocity
+//	SuggestedVelocity = FVector(rvw_R2[1].X, rvw_R2[1].Y, 0);
+//
+//	//set the suggested new angular velocity
+//	SuggestedAngularVelocity = rvw_R2[2];
+//
+//	//check if we're in debug mode and we're displaying the debug arrows
+//	if (bDebugMode && WallColDebugArrows)
+//	{
+//		//draw the debug arrows
+//		DrawVelChangeDebugArrows();
+//	}
+//}
 
 void ABallActor::OnSphereHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 	ProcessHit(Hit, OtherActor);
 }
 
-void ABallActor::BallBeginDetectionOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{
-	//add the other actor to the list of overlapping actors
-	OverlappingActors.AddUnique(OtherActor);
-}
-
-void ABallActor::BallEndDetectionOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
-{
-	//remove the other actor from the list of overlapping actors
-	OverlappingActors.Remove(OtherActor);
-}
+//void ABallActor::BallBeginDetectionOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+//{
+//	//add the other actor to the list of overlapping actors
+//	OverlappingActors.AddUnique(OtherActor);
+//}
+//
+//void ABallActor::BallEndDetectionOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+//{
+//	//remove the other actor from the list of overlapping actors
+//	OverlappingActors.Remove(OtherActor);
+//}
 
 FVector ABallActor::GetBallVelocity() const
 {
