@@ -146,9 +146,20 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "BoolData|Physics")
 	FVector AngularVelocity = FVector::ZeroVector;
 
-	//the speed at which the ball is considered to be stationary
+	//how long to store the last collided ball for
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics")
-	float StationarySpeed = 50;
+	float LastCollidedBallStorageTime = 0.1;
+
+	//storage for the last ball we collided with
+	UPROPERTY(BlueprintReadOnly, Category = "BoolData|Physics")
+	TObjectPtr<ABallActor> LastCollidedBall = nullptr;
+
+	//storage for the timer handle for resetting the last collided ball
+	FTimerHandle LastCollidedBallResetTimer;
+
+	////the speed at which the ball is considered to be stationary
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics")
+	//float StationarySpeed = 50;
 
 	////storage for the actors that are currently within our detection radius
 	//UPROPERTY(BlueprintReadOnly, Category = "BoolData|Physics")
