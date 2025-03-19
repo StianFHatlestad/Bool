@@ -120,10 +120,12 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	class APlayerPawn* PlayerPawn = nullptr;
 
-	//the current physics data of the ball
+	//the current physics solver class of the ball
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BoolData|Physics")
 	TSubclassOf<class UPhysicsSolverBlueprintBase> PhysicsSolverClass;
 
+	//the current physics solver of the ball
+	UPROPERTY(BlueprintReadOnly, Category = "BoolData|Physics")
 	TObjectPtr<UPhysicsSolverBlueprintBase> PhysicsSolver;
 
 	//the current turn data for the ball
