@@ -61,7 +61,7 @@ void AGoalActor::OnBoxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AAc
 			BallActor->SetBallVelocity(FVector::ZeroVector);
 
 			//set the cue balls angular velocity to zero
-			BallActor->SetBallAngularVelocity(FVector::ZeroVector);
+			BallActor->SetBallAngularVelocity(FRotator::ZeroRotator);
 		}
 		else
 		{

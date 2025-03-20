@@ -22,9 +22,9 @@ float UPhysicsSolverBlueprintBase::WallCollisionSetExitSpeed_Implementation(ABal
 	return 1;
 }
 
-FVector UPhysicsSolverBlueprintBase::WallCollisionSetAngularExitDirection_Implementation(ABallActor* UnModifiedBall, const FHitResult& Hit) const
+FRotator UPhysicsSolverBlueprintBase::WallCollisionSetAngularExitDirection_Implementation(ABallActor* UnModifiedBall, const FHitResult& Hit) const
 {
-	return FVector::ZeroVector;
+	return FRotator::ZeroRotator;
 }
 
 float UPhysicsSolverBlueprintBase::WallCollisionSetAngularExitSpeed_Implementation(ABallActor* UnModifiedBall, const FHitResult& Hit) const
@@ -42,9 +42,9 @@ float UPhysicsSolverBlueprintBase::BallCollisionSetExitSpeed_Implementation(ABal
 	return 1;
 }
 
-FVector UPhysicsSolverBlueprintBase::BallCollisionSetAngularExitDirection_Implementation(ABallActor* UnModifiedBall, ABallActor* OtherBallActor, const FHitResult& Hit) const
+FRotator UPhysicsSolverBlueprintBase::BallCollisionSetAngularExitDirection_Implementation(ABallActor* UnModifiedBall, ABallActor* OtherBallActor, const FHitResult& Hit) const
 {
-	return FVector::ZeroVector;
+	return FRotator::ZeroRotator;
 }
 
 float UPhysicsSolverBlueprintBase::BallCollisionSetAngularExitSpeed_Implementation(ABallActor* UnModifiedBall, ABallActor* OtherBallActor, FVector OutDirection, const FHitResult& Hit) const
@@ -62,9 +62,9 @@ float UPhysicsSolverBlueprintBase::OtherBallCollisionSetExitSpeed_Implementation
 	return 1;
 }
 
-FVector UPhysicsSolverBlueprintBase::OtherBallCollisionSetAngularExitDirection_Implementation(ABallActor* OtherBallActor, ABallActor* UnModifiedBall, const FHitResult& Hit) const
+FRotator UPhysicsSolverBlueprintBase::OtherBallCollisionSetAngularExitDirection_Implementation(ABallActor* OtherBallActor, ABallActor* UnModifiedBall, const FHitResult& Hit) const
 {
-	return FVector::ZeroVector;
+	return FRotator::ZeroRotator;
 }
 
 float UPhysicsSolverBlueprintBase::OtherBallCollisionSetAngularExitSpeed_Implementation(ABallActor* OtherBallActor, ABallActor* UnModifiedBall, FVector OutDirection, const FHitResult& Hit) const
@@ -80,4 +80,10 @@ void UPhysicsSolverBlueprintBase::UpdateBallVelocity_Implementation(ABallActor* 
 void UPhysicsSolverBlueprintBase::UpdateBallAngularVelocity_Implementation(ABallActor* BallActor, float DeltaTime) const
 {
 	
+}
+
+void UPhysicsSolverBlueprintBase::PerformMovement_Implementation(ABallActor* BallActor, float DeltaTime) const
+{
+	//move the component
+	BallActor->SphereComponent->MoveComponent(BallActor->GetBallVelocity() * DeltaTime, BallActor->SphereComponent->GetComponentRotation() + BallActor->GetBallAngularVelocity() * DeltaTime, true);
 }

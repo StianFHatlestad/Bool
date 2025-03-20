@@ -243,9 +243,19 @@ void ABallActor::Tick(const float DeltaTime)
 		//return early to prevent further execution
 		return;
 	}
-	
-	//move the component
-	SphereComponent->MoveComponent(GetBallVelocity() * DeltaTime, SphereComponent->GetComponentRotation() + GetBallAngularVelocity().Rotation() * DeltaTime, true);
+
+	//check if we have a valid physics solver
+	if (PhysicsSolverClass)
+	{
+		//use the physics solver to update our velocity
+		PhysicsSolver->UpdateBallVelocity(this, DeltaTime);
+
+		//use the physics solver to update our angular velocity
+		PhysicsSolver->UpdateBallAngularVelocity(this, DeltaTime);
+
+		//perform the movement
+		PhysicsSolver->PerformMovement(this, DeltaTime);
+	}
 
 	//check if we're outside the table
 	if (IsOutsideTable())
@@ -270,19 +280,6 @@ void ABallActor::Tick(const float DeltaTime)
 			//process hit
 			ProcessHit(HitResult, HitResult.GetActor());
 		}
-	}
-
-	//check if we have a valid physics solver
-	if (PhysicsSolverClass)
-	{
-		//use the physics solver to update our velocity
-		PhysicsSolver->UpdateBallVelocity(this, DeltaTime);
-
-		//use the physics solver to update our angular velocity
-		PhysicsSolver->UpdateBallAngularVelocity(this, DeltaTime);
-
-		////return to prevent further execution
-		//return;
 	}
 
 	////update the bool physics state
@@ -847,13 +844,13 @@ bool ABallActor::ProcessHit(const FHitResult& HitResult, AActor* OtherActor)
 	const FVector ExitVelocity = ExitDirection * ExitSpeed;
 
 	//get the angular exit direction
-	const FVector AngularExitDirection = PhysicsDataBP->WallCollisionSetAngularExitDirection(this, HitResult);
+	const FRotator AngularExitDirection = PhysicsDataBP->WallCollisionSetAngularExitDirection(this, HitResult);
 
 	//get the angular exit speed
 	const float AngularExitSpeed = PhysicsDataBP->WallCollisionSetAngularExitSpeed(this, HitResult);
 
 	//get the angular exit velocity after the wall collision
-	const FVector AngularExitVelocity = AngularExitDirection * AngularExitSpeed;
+	const FRotator AngularExitVelocity = AngularExitDirection * AngularExitSpeed;
 
 	//check if we're in debug mode and we're drawing debug arrows for the old and new velocities of this ball
 	if (bDebugMode && BallColDebugArrows)
@@ -1078,7 +1075,7 @@ FVector ABallActor::GetBallVelocity() const
 	return CurrentVelocity;
 }
 
-FVector ABallActor::GetBallAngularVelocity() const
+FRotator ABallActor::GetBallAngularVelocity() const
 {
 	////check if we're not using custom collision response
 	//if (!bUseCustomCollisionResponse)
@@ -1145,7 +1142,7 @@ void ABallActor::SetBallVelocity(const FVector& NewVelocity)
 	CurrentVelocity = NewVelocity;
 }
 
-void ABallActor::SetBallAngularVelocity(const FVector& NewAngularVelocity)
+void ABallActor::SetBallAngularVelocity(const FRotator& NewAngularVelocity)
 {
 	////check if we're not using custom collision response
 	//if (!bUseCustomCollisionResponse)
@@ -1181,7 +1178,7 @@ void ABallActor::ErrorResetVelocities(const FString ErrorMessage, const bool bPr
 	SetBallVelocity(FVector::ZeroVector);
 
 	//set our angular velocity to zero
-	SetBallAngularVelocity(FVector::ZeroVector);
+	SetBallAngularVelocity(FRotator::ZeroRotator);
 }
 
 //FString ABallActor::GetPhysicsStateAsString(EBallPhysicsState InPhysicsState) const
