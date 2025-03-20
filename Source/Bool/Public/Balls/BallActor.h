@@ -146,7 +146,7 @@ public:
 
 	//the angular velocity of the ball
 	UPROPERTY(BlueprintReadOnly, Category = "BoolData|Physics")
-	FVector AngularVelocity = FVector::ZeroVector;
+	FRotator AngularVelocity = FRotator::ZeroRotator;
 
 	//how long to store the last collided ball for
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics")
@@ -310,7 +310,7 @@ public:
 
 	//function to get the angular velocity of the ball
 	UFUNCTION(BlueprintCallable)
-	FVector GetBallAngularVelocity() const;
+	FRotator GetBallAngularVelocity() const;
 
 	////function to get the current friction coefficient we're using
 	//UFUNCTION(BlueprintCallable)
@@ -326,7 +326,7 @@ public:
 
 	//function to set the angular velocity of the ball
 	UFUNCTION(BlueprintCallable)
-	void SetBallAngularVelocity(const FVector& NewAngularVelocity);
+	void SetBallAngularVelocity(const FRotator& NewAngularVelocity);
 
 	//function that sets our velocity to zero and our angular velocity to zero
 	UFUNCTION()

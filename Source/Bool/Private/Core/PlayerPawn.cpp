@@ -124,7 +124,7 @@ void APlayerPawn::ShootCueBallAtPosition(FVector NewVelocity, const FName BoneNa
 
 	//add the impulse to the cue ball
 	CueBall->SetBallVelocity(NewVelocity);
-	CueBall->SetBallAngularVelocity(AngularImpulse);
+	CueBall->SetBallAngularVelocity(AngularImpulse.Rotation());
 }
 
 void APlayerPawn::SetCueBallHitLocation(const FVector2D HitLocation)
