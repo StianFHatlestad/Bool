@@ -84,6 +84,10 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	USkeletalMeshComponent* MeshComponent;
 
+	//our detection sphere component for detecting multi body collision
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	USphereComponent* BallDetectionComponent;
+
 	//whether or not to use debug mode
 	UPROPERTY(EditAnywhere, Category = "BoolData|Debug")
 	bool bDebugMode = false;
@@ -148,24 +152,29 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "BoolData|Physics")
 	FRotator AngularVelocity = FRotator::ZeroRotator;
 
-	//how long to store the last collided ball for
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics")
-	float LastCollidedBallStorageTime = 0.1;
-
-	//storage for the last ball we collided with
+	//the displacement of the ball from the last tick
 	UPROPERTY(BlueprintReadOnly, Category = "BoolData|Physics")
-	TObjectPtr<ABallActor> LastCollidedBall = nullptr;
+	FVector Displacement = FVector::ZeroVector;
 
-	//storage for the timer handle for resetting the last collided ball
-	FTimerHandle LastCollidedBallResetTimer;
+	//storage of our old positions
+	UPROPERTY(BlueprintReadOnly, Category = "BoolData|Physics")
+	TArray<FVector> OldPositions = { FVector::ZeroVector };
+
+	//the amount of oldpositions to store
+	UPROPERTY(EditAnywhere, Category = "BoolData|Physics")
+	int32 OldPositionsToStore = 10;
+
+	//storage for the last few actors we've collided with
+	UPROPERTY(BlueprintReadOnly, Category = "BoolData|Physics")
+	TArray<TObjectPtr<AActor>> LastCollidedActors;
 
 	////the speed at which the ball is considered to be stationary
 	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics")
 	//float StationarySpeed = 50;
 
-	////storage for the actors that are currently within our detection radius
-	//UPROPERTY(BlueprintReadOnly, Category = "BoolData|Physics")
-	//TArray<TObjectPtr<AActor>> OverlappingActors;
+	//storage for the actors that are currently within our detection radius
+	UPROPERTY(BlueprintReadOnly, Category = "BoolData|Physics")
+	TArray<ABallActor*> OverlappingBalls;
 
 	//the current physics state of the ball
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BoolData|Physics")
@@ -254,9 +263,6 @@ public:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 
-	//function to update the old velocities
-	void UpdateOldVelocities();
-
 	////function to check if the state of the ball should be updated
 	//UFUNCTION(BlueprintCallable)
 	//void UpdateBoolPhysicsState(float DeltaTime);
@@ -296,13 +302,13 @@ public:
 	UFUNCTION()
 	void OnSphereHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
-	////function called when the ball begins to detect an overlap
-	//UFUNCTION()
-	//void BallBeginDetectionOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	//function called when the ball begins to detect an overlap
+	UFUNCTION()
+	void BallBeginDetectionOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
-	////function called when the ball ends detecting an overlap
-	//UFUNCTION()
-	//void BallEndDetectionOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	//function called when the ball ends detecting an overlap
+	UFUNCTION()
+	void BallEndDetectionOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 	//function to get the velocity of the ball
 	UFUNCTION(BlueprintCallable)
