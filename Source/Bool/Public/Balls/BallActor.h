@@ -120,6 +120,10 @@ public:
 	UPROPERTY(EditAnywhere, Category = "BoolData|Debug", meta = (EditCondition = "bDebugMode", EditConditionHides))
 	TArray<FVector> OldVelocities = {FVector::ZeroVector};
 
+	//the amount of score this ball will give when the player scores it
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Score")
+	float ScoreValue = 100;
+
 	//the player pawn in the level (for blueprint access
 	UPROPERTY(BlueprintReadOnly)
 	class APlayerPawn* PlayerPawn = nullptr;

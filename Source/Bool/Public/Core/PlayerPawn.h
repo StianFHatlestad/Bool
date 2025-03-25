@@ -61,6 +61,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="BoolData")
 	FVector2D CueBallHitLocation = FVector2D::Zero();
 
+	//the target score for this round
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="BoolData|Turns/Rounds")
+	int DesiredRoundScore = 100;
+
 	//the default amount of turns the player has each round
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="BoolData|Turns/Rounds")
 	int TurnsPerRound = 5;
