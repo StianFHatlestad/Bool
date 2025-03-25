@@ -8,13 +8,13 @@
  * Class for getting physics data in a highly customizable way.
  */
 UCLASS(Blueprintable)
-class UPhysicsSolverBlueprintBase : public UObject
+class APhysicsSolverBlueprintBase : public AActor
 {
 	GENERATED_BODY()
 public:
 
 	//constructor(s)
-	UPhysicsSolverBlueprintBase();
+	APhysicsSolverBlueprintBase();
 
 	//sets the exit direction of a ball after a collision with a wall
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)

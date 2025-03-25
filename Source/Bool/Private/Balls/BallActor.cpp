@@ -183,8 +183,15 @@ void ABallActor::BeginPlay()
 	//call the parent implementation
 	Super::BeginPlay();
 
-	//get the physics data blueprint
-	PhysicsSolver  = PhysicsSolverClass.GetDefaultObject();
+	//get the physics solver
+	AActor* LocPhysSolver = UGameplayStatics::GetActorOfClass(this, APhysicsSolverBlueprintBase::StaticClass());
+
+	//check if the physics solver is valid
+	if (LocPhysSolver->IsValidLowLevelFast())
+	{
+		//set the physics solver
+		PhysicsSolver = Cast<APhysicsSolverBlueprintBase>(LocPhysSolver);
+	}
 
 	//get all actors with the ignore collision tag
 	TArray<AActor*> ActorsToIgnore;
@@ -245,7 +252,7 @@ void ABallActor::Tick(const float DeltaTime)
 	}
 
 	//check if we have a valid physics solver
-	if (PhysicsSolverClass)
+	if (PhysicsSolver->IsValidLowLevelFast())
 	{
 		//use the physics solver to update our velocity
 		PhysicsSolver->UpdateBallVelocity(this, DeltaTime);
@@ -659,8 +666,8 @@ bool ABallActor::ProcessHit(const FHitResult& HitResult, AActor* OtherActor)
 		return false;
 	}
 
-	//check if we don't have a valid physics data blueprint
-	if (!PhysicsSolverClass->IsValidLowLevelFast())
+	//check if we don't have a valid physics solver
+	if (!PhysicsSolver->IsValidLowLevelFast())
 	{
 		//reset our velocities
 		ErrorResetVelocities(GetActorNameOrLabel() + " Has No Valid PhysicsDataBlueprint");
@@ -780,23 +787,20 @@ bool ABallActor::ProcessHit(const FHitResult& HitResult, AActor* OtherActor)
 			return false;
 		}
 
-		//get the physics data blueprint
-		const TObjectPtr<UPhysicsSolverBlueprintBase> PhysicsDataBP = PhysicsSolverClass.GetDefaultObject();
-
 		//get the exit direction
-		const FVector ExitDirection = PhysicsDataBP->BallCollisionSetExitDirection(this, OverlappingBalls, HitResult);
+		const FVector ExitDirection = PhysicsSolver->BallCollisionSetExitDirection(this, OverlappingBalls, HitResult);
 
 		//get the exit speed
-		const float ExitSpeed = PhysicsDataBP->BallCollisionSetExitSpeed(this, OverlappingBalls, ExitDirection, HitResult);
+		const float ExitSpeed = PhysicsSolver->BallCollisionSetExitSpeed(this, OverlappingBalls, ExitDirection, HitResult);
 
 		//get our exit velocity after the ball collision
 		FVector ExitVelocity = ExitDirection * ExitSpeed;
 
 		//get our angular exit direction
-		const FRotator AngularExitDirection = PhysicsDataBP->BallCollisionSetAngularExitDirection(this, OverlappingBalls, HitResult);
+		const FRotator AngularExitDirection = PhysicsSolver->BallCollisionSetAngularExitDirection(this, OverlappingBalls, HitResult);
 
 		//get our angular exit speed
-		const float AngularExitSpeed = PhysicsDataBP->BallCollisionSetAngularExitSpeed(this, OverlappingBalls, AngularExitDirection, HitResult);
+		const float AngularExitSpeed = PhysicsSolver->BallCollisionSetAngularExitSpeed(this, OverlappingBalls, AngularExitDirection, HitResult);
 
 		//get our angular exit velocity after the ball collision
 		const FRotator AngularExitVelocity = AngularExitDirection * AngularExitSpeed;
@@ -814,19 +818,19 @@ bool ABallActor::ProcessHit(const FHitResult& HitResult, AActor* OtherActor)
 		for (int i = 0; i < OverlappingBalls.Num(); i++)
 		{
 			//get the exit direction
-			const FVector OtherBallExitDirection = PhysicsDataBP->OtherBallCollisionSetExitDirection(OverlappingBalls[i]->OverlappingBalls, OverlappingBalls[i], this, HitResult);
+			const FVector OtherBallExitDirection = PhysicsSolver->OtherBallCollisionSetExitDirection(OverlappingBalls[i]->OverlappingBalls, OverlappingBalls[i], this, HitResult);
 
 			//get the exit speed
-			const float OtherBallExitSpeed = PhysicsDataBP->OtherBallCollisionSetExitSpeed(OverlappingBalls[i]->OverlappingBalls, OverlappingBalls[i], this, ExitDirection, HitResult);
+			const float OtherBallExitSpeed = PhysicsSolver->OtherBallCollisionSetExitSpeed(OverlappingBalls[i]->OverlappingBalls, OverlappingBalls[i], this, ExitDirection, HitResult);
 
 			//get the exit velocity for the other ball
 			FVector OtherBallExitVelocity = OtherBallExitDirection * OtherBallExitSpeed;
 
 			//get the other balls angular exit direction
-			const FRotator OtherBallAngularExitDirection = PhysicsDataBP->OtherBallCollisionSetAngularExitDirection(OverlappingBalls[i]->OverlappingBalls, OverlappingBalls[i], this, HitResult);
+			const FRotator OtherBallAngularExitDirection = PhysicsSolver->OtherBallCollisionSetAngularExitDirection(OverlappingBalls[i]->OverlappingBalls, OverlappingBalls[i], this, HitResult);
 
 			//get the other balls angular exit speed
-			const float OtherBallAngularExitSpeed = PhysicsDataBP->OtherBallCollisionSetAngularExitSpeed(OverlappingBalls[i]->OverlappingBalls, OverlappingBalls[i], this, OtherBallAngularExitDirection, HitResult);
+			const float OtherBallAngularExitSpeed = PhysicsSolver->OtherBallCollisionSetAngularExitSpeed(OverlappingBalls[i]->OverlappingBalls, OverlappingBalls[i], this, OtherBallAngularExitDirection, HitResult);
 
 			//get the other balls angular exit velocity
 			const FRotator OtherBallAngularExitVelocity = OtherBallAngularExitDirection * OtherBallAngularExitSpeed;
@@ -910,23 +914,20 @@ bool ABallActor::ProcessHit(const FHitResult& HitResult, AActor* OtherActor)
 		BallUpgradeDataAsset.Get()->GetDefaultObject<UBallUpgradeDataAsset>()->OnWallHit(this, HitResult.Component.Get(), HitResult);
 	}
 
-	//get the physics data blueprint
-	const TObjectPtr<UPhysicsSolverBlueprintBase> PhysicsDataBP = PhysicsSolverClass.GetDefaultObject();
-
 	//get the exit direction
-	const FVector ExitDirection = PhysicsDataBP->WallCollisionSetExitDirection(this, HitResult);
+	const FVector ExitDirection = PhysicsSolver->WallCollisionSetExitDirection(this, HitResult);
 
 	//get the exit speed
-	const float ExitSpeed = PhysicsDataBP->WallCollisionSetExitSpeed(this, HitResult);
+	const float ExitSpeed = PhysicsSolver->WallCollisionSetExitSpeed(this, HitResult);
 
 	//get the exit velocity after the wall collision
 	const FVector ExitVelocity = ExitDirection * ExitSpeed;
 
 	//get the angular exit direction
-	const FRotator AngularExitDirection = PhysicsDataBP->WallCollisionSetAngularExitDirection(this, HitResult);
+	const FRotator AngularExitDirection = PhysicsSolver->WallCollisionSetAngularExitDirection(this, HitResult);
 
 	//get the angular exit speed
-	const float AngularExitSpeed = PhysicsDataBP->WallCollisionSetAngularExitSpeed(this, HitResult);
+	const float AngularExitSpeed = PhysicsSolver->WallCollisionSetAngularExitSpeed(this, HitResult);
 
 	//get the angular exit velocity after the wall collision
 	const FRotator AngularExitVelocity = AngularExitDirection * AngularExitSpeed;
