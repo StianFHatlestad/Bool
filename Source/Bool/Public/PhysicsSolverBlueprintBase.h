@@ -38,43 +38,43 @@ public:
 
 	//sets the exit direction of a ball after a collision with another ball
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
-	FVector BallCollisionSetExitDirection(ABallActor* UnModifiedBall, TArray<ABallActor*>& OtherBalls, const FHitResult& Hit);
-	FVector BallCollisionSetExitDirection_Implementation(ABallActor* UnModifiedBall, TArray<ABallActor*>& OtherBalls, const FHitResult& Hit);
+	FVector BallCollisionSetExitDirection(ABallActor* UnModifiedBall, const TArray<ABallActor*>& OtherBalls, const FHitResult& Hit);
+	FVector BallCollisionSetExitDirection_Implementation(ABallActor* UnModifiedBall, const TArray<ABallActor*>& OtherBalls, const FHitResult& Hit);
 
 	//sets the magnitude of the velocity of a ball after a collision with another ball
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
-	float BallCollisionSetExitSpeed(ABallActor* UnModifiedBall, TArray<ABallActor*>& OtherBalls, FVector OutDirection, const FHitResult& Hit);
-	float BallCollisionSetExitSpeed_Implementation(ABallActor* UnModifiedBall, TArray<ABallActor*>& OtherBalls, FVector OutDirection, const FHitResult& Hit);
+	float BallCollisionSetExitSpeed(ABallActor* UnModifiedBall, const TArray<ABallActor*>& OtherBalls, FVector OutDirection, const FHitResult& Hit);
+	float BallCollisionSetExitSpeed_Implementation(ABallActor* UnModifiedBall, const TArray<ABallActor*>& OtherBalls, FVector OutDirection, const FHitResult& Hit);
 
 	//sets the angular exit velocity direction of a ball after a collision with another ball
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
-	FRotator BallCollisionSetAngularExitDirection(ABallActor* UnModifiedBall, TArray<ABallActor*>& OtherBalls, const FHitResult& Hit);
-	FRotator BallCollisionSetAngularExitDirection_Implementation(ABallActor* UnModifiedBall, TArray<ABallActor*>& OtherBalls, const FHitResult& Hit);
+	FRotator BallCollisionSetAngularExitDirection(ABallActor* UnModifiedBall, const TArray<ABallActor*>& OtherBalls, const FHitResult& Hit);
+	FRotator BallCollisionSetAngularExitDirection_Implementation(ABallActor* UnModifiedBall, const TArray<ABallActor*>& OtherBalls, const FHitResult& Hit);
 
 	//sets the magnitude of the angular velocity of a ball after a collision with another ball
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
-	float BallCollisionSetAngularExitSpeed(ABallActor* UnModifiedBall, TArray<ABallActor*>& OtherBalls, FRotator OutDirection, const FHitResult& Hit);
-	float BallCollisionSetAngularExitSpeed_Implementation(ABallActor* UnModifiedBall, TArray<ABallActor*>& OtherBalls, FRotator OutDirection, const FHitResult& Hit);
+	float BallCollisionSetAngularExitSpeed(ABallActor* UnModifiedBall, const TArray<ABallActor*>& OtherBalls, FRotator OutDirection, const FHitResult& Hit);
+	float BallCollisionSetAngularExitSpeed_Implementation(ABallActor* UnModifiedBall, const TArray<ABallActor*>& OtherBalls, FRotator OutDirection, const FHitResult& Hit);
 
 	//sets the exit direction of the other ball after a collision with another ball
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
-	FVector OtherBallCollisionSetExitDirection(TArray<ABallActor*>& OtherBalls, ABallActor* UnModifiedBall, ABallActor* InitialBall, const FHitResult& Hit);
-	FVector OtherBallCollisionSetExitDirection_Implementation(TArray<ABallActor*>& OtherBalls, ABallActor* UnModifiedBall, ABallActor* InitialBall, const FHitResult& Hit);
+	FVector OtherBallCollisionSetExitDirection(const TArray<ABallActor*>& OtherBalls, ABallActor* UnModifiedBall, ABallActor* InitialBall, const FHitResult& Hit);
+	FVector OtherBallCollisionSetExitDirection_Implementation(const TArray<ABallActor*>& OtherBalls, ABallActor* UnModifiedBall, ABallActor* InitialBall, const FHitResult& Hit);
 
 	//sets the magnitude of the velocity of the other ball after a collision with another ball
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
-	float OtherBallCollisionSetExitSpeed(TArray<ABallActor*>& OtherBalls, ABallActor* UnModifiedBall, ABallActor* InitialBall, FVector OutDirection, const FHitResult& Hit);
-	float OtherBallCollisionSetExitSpeed_Implementation(TArray<ABallActor*>& OtherBalls, ABallActor* UnModifiedBall, ABallActor* InitialBall, FVector OutDirection, const FHitResult& Hit);
+	float OtherBallCollisionSetExitSpeed(const TArray<ABallActor*>& OtherBalls, ABallActor* UnModifiedBall, ABallActor* InitialBall, FVector OutDirection, const FHitResult& Hit);
+	float OtherBallCollisionSetExitSpeed_Implementation(const TArray<ABallActor*>& OtherBalls, ABallActor* UnModifiedBall, ABallActor* InitialBall, FVector OutDirection, const FHitResult& Hit);
 
 	//sets the angular exit direction of the other ball after a collision with another ball
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
-	FRotator OtherBallCollisionSetAngularExitDirection(TArray<ABallActor*>& OtherBalls, ABallActor* UnModifiedBall, ABallActor* InitialBall, const FHitResult& Hit);
-	FRotator OtherBallCollisionSetAngularExitDirection_Implementation(TArray<ABallActor*>& OtherBalls, ABallActor* UnModifiedBall, ABallActor* InitialBall, const FHitResult& Hit);
+	FRotator OtherBallCollisionSetAngularExitDirection(const TArray<ABallActor*>& OtherBalls, ABallActor* UnModifiedBall, ABallActor* InitialBall, const FHitResult& Hit);
+	FRotator OtherBallCollisionSetAngularExitDirection_Implementation(const TArray<ABallActor*>& OtherBalls, ABallActor* UnModifiedBall, ABallActor* InitialBall, const FHitResult& Hit);
 
 	//sets the magnitude of the angular velocity of the other ball after a collision with another ball
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
-	float OtherBallCollisionSetAngularExitSpeed(TArray<ABallActor*>& OtherBalls, ABallActor* UnModifiedBall, ABallActor* InitialBall, FRotator OutDirection, const FHitResult& Hit);
-	float OtherBallCollisionSetAngularExitSpeed_Implementation(TArray<ABallActor*>& OtherBalls, ABallActor* UnModifiedBall, ABallActor* InitialBall, FRotator OutDirection, const FHitResult& Hit);
+	float OtherBallCollisionSetAngularExitSpeed(const TArray<ABallActor*>& OtherBalls, ABallActor* UnModifiedBall, ABallActor* InitialBall, FRotator OutDirection, const FHitResult& Hit);
+	float OtherBallCollisionSetAngularExitSpeed_Implementation(const TArray<ABallActor*>& OtherBalls, ABallActor* UnModifiedBall, ABallActor* InitialBall, FRotator OutDirection, const FHitResult& Hit);
 	
 	//updates a balls velocity every tick
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)

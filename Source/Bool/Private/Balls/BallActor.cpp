@@ -801,36 +801,62 @@ bool ABallActor::ProcessHit(const FHitResult& HitResult, AActor* OtherActor)
 		//get our angular exit velocity after the ball collision
 		const FRotator AngularExitVelocity = AngularExitDirection * AngularExitSpeed;
 
-		//get the exit direction
-		const FVector OtherBallExitDirection = PhysicsDataBP->OtherBallCollisionSetExitDirection(OtherBallActor->OverlappingBalls, OtherBallActor, this, HitResult);
+		//storage for all the other ball exit velocities
+		TArray<FVector> OtherBallExitVelocities;
 
-		//get the exit speed
-		const float OtherBallExitSpeed = PhysicsDataBP->OtherBallCollisionSetExitSpeed(OtherBallActor->OverlappingBalls, OtherBallActor, this, ExitDirection, HitResult);
+		//storage for all the other ball angular exit velocities
+		TArray<FRotator> OtherBallAngularExitVelocities;
 
-		//get the exit velocity for the other ball
-		FVector OtherBallExitVelocity = OtherBallExitDirection * OtherBallExitSpeed;
+		//storage for the largest exit velocity
+		FVector LargestExitVelocity = FVector::Zero();
 
-		//get the other balls angular exit direction
-		const FRotator OtherBallAngularExitDirection = PhysicsDataBP->OtherBallCollisionSetAngularExitDirection(OtherBallActor->OverlappingBalls, OtherBallActor, this, HitResult);
+		//iterate over the overlapping balls
+		for (int i = 0; i < OverlappingBalls.Num(); i++)
+		{
+			//get the exit direction
+			const FVector OtherBallExitDirection = PhysicsDataBP->OtherBallCollisionSetExitDirection(OverlappingBalls[i]->OverlappingBalls, OverlappingBalls[i], this, HitResult);
 
-		//get the other balls angular exit speed
-		const float OtherBallAngularExitSpeed = PhysicsDataBP->OtherBallCollisionSetAngularExitSpeed(OtherBallActor->OverlappingBalls, OtherBallActor, this, OtherBallAngularExitDirection, HitResult);
+			//get the exit speed
+			const float OtherBallExitSpeed = PhysicsDataBP->OtherBallCollisionSetExitSpeed(OverlappingBalls[i]->OverlappingBalls, OverlappingBalls[i], this, ExitDirection, HitResult);
 
-		//get the other balls angular exit velocity
-		const FRotator OtherBallAngularExitVelocity = OtherBallAngularExitDirection * OtherBallAngularExitSpeed;
+			//get the exit velocity for the other ball
+			FVector OtherBallExitVelocity = OtherBallExitDirection * OtherBallExitSpeed;
+
+			//get the other balls angular exit direction
+			const FRotator OtherBallAngularExitDirection = PhysicsDataBP->OtherBallCollisionSetAngularExitDirection(OverlappingBalls[i]->OverlappingBalls, OverlappingBalls[i], this, HitResult);
+
+			//get the other balls angular exit speed
+			const float OtherBallAngularExitSpeed = PhysicsDataBP->OtherBallCollisionSetAngularExitSpeed(OverlappingBalls[i]->OverlappingBalls, OverlappingBalls[i], this, OtherBallAngularExitDirection, HitResult);
+
+			//get the other balls angular exit velocity
+			const FRotator OtherBallAngularExitVelocity = OtherBallAngularExitDirection * OtherBallAngularExitSpeed;
+
+			//add the other balls exit velocity to the array
+			OtherBallExitVelocities.Add(OtherBallExitVelocity);
+
+			//add the other balls angular exit velocity to the array
+			OtherBallAngularExitVelocities.Add(OtherBallAngularExitVelocity);
+
+			//check if the other balls exit velocity is greater than the largest exit velocity
+			if (OtherBallExitVelocity.Size() > LargestExitVelocity.Size())
+			{
+				//set the largest exit velocity
+				LargestExitVelocity = OtherBallExitVelocity;
+			}
+		}
 
 		//check if our max relative speed gain is greater than 0
 		if (MaxRelativeSpeedGain > 0)
 		{
 			//the ratio between the sum of the old velocities and the sum of the new velocities
-			const float SpeedRatio = (GetBallVelocity().Size() + OtherBallActor->GetBallVelocity().Size()) * MaxRelativeSpeedGain / (ExitVelocity.Size() + OtherBallExitVelocity.Size());
+			const float SpeedRatio = (GetBallVelocity().Size() + OtherBallActor->GetBallVelocity().Size()) * MaxRelativeSpeedGain / (ExitVelocity.Size() + LargestExitVelocity.Size());
 
 			//check if the sum of our new velocities are bigger than the sum of the old velocities
-			if ((ExitVelocity.Size() + OtherBallExitVelocity.Size()) * MaxRelativeSpeedGain > GetBallVelocity().Size() + OtherBallActor->GetBallVelocity().Size())
+			if ((ExitVelocity.Size() + LargestExitVelocity.Size()) * MaxRelativeSpeedGain > GetBallVelocity().Size() + OtherBallActor->GetBallVelocity().Size())
 			{
 				//adjust the velocities
 				ExitVelocity *= SpeedRatio;
-				OtherBallExitVelocity *= SpeedRatio;
+				LargestExitVelocity *= SpeedRatio;
 			}
 		}
 
@@ -844,11 +870,15 @@ bool ABallActor::ProcessHit(const FHitResult& HitResult, AActor* OtherActor)
 		//set our new angular velocity
 		SetBallAngularVelocity(AngularExitVelocity);
 
-		//set the other balls new velocity
-		OtherBallActor->SetBallVelocity(OtherBallExitVelocity);
+		//iterate over the overlapping balls
+		for (int i = 0; i < OverlappingBalls.Num(); i++)
+		{
+			//set the other balls new velocity
+			OverlappingBalls[i]->SetBallVelocity(OtherBallExitVelocities[i]);
 
-		//set the other balls new angular velocity
-		OtherBallActor->SetBallAngularVelocity(OtherBallAngularExitVelocity);
+			//set the other balls new angular velocity
+			OverlappingBalls[i]->SetBallAngularVelocity(OtherBallAngularExitVelocities[i]);
+		}
 
 		//return early to prevent further execution
 		return true;

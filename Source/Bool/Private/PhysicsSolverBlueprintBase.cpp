@@ -27,42 +27,42 @@ float UPhysicsSolverBlueprintBase::WallCollisionSetAngularExitSpeed_Implementati
 	return 1;
 }
 
-FVector UPhysicsSolverBlueprintBase::BallCollisionSetExitDirection_Implementation(ABallActor* UnModifiedBall, TArray<ABallActor*>& OtherBalls, const FHitResult& Hit)
+FVector UPhysicsSolverBlueprintBase::BallCollisionSetExitDirection_Implementation(ABallActor* UnModifiedBall, const TArray<ABallActor*>& OtherBalls, const FHitResult& Hit)
 {
 	return FVector::ZeroVector;
 }
 
-float UPhysicsSolverBlueprintBase::BallCollisionSetExitSpeed_Implementation(ABallActor* UnModifiedBall, TArray<ABallActor*>& OtherBalls, FVector OutDirection, const FHitResult& Hit)
+float UPhysicsSolverBlueprintBase::BallCollisionSetExitSpeed_Implementation(ABallActor* UnModifiedBall, const TArray<ABallActor*>& OtherBalls, FVector OutDirection, const FHitResult& Hit)
 {
 	return 1;
 }
 
-FRotator UPhysicsSolverBlueprintBase::BallCollisionSetAngularExitDirection_Implementation(ABallActor* UnModifiedBall, TArray<ABallActor*>& OtherBalls, const FHitResult& Hit)
+FRotator UPhysicsSolverBlueprintBase::BallCollisionSetAngularExitDirection_Implementation(ABallActor* UnModifiedBall, const TArray<ABallActor*>& OtherBalls, const FHitResult& Hit)
 {
 	return FRotator::ZeroRotator;
 }
 
-float UPhysicsSolverBlueprintBase::BallCollisionSetAngularExitSpeed_Implementation(ABallActor* UnModifiedBall, TArray<ABallActor*>& OtherBalls, FRotator OutDirection, const FHitResult& Hit)
+float UPhysicsSolverBlueprintBase::BallCollisionSetAngularExitSpeed_Implementation(ABallActor* UnModifiedBall, const TArray<ABallActor*>& OtherBalls, FRotator OutDirection, const FHitResult& Hit)
 {
 	return 1;
 }
 
-FVector UPhysicsSolverBlueprintBase::OtherBallCollisionSetExitDirection_Implementation(TArray<ABallActor*>& OtherBalls, ABallActor* UnModifiedBall, ABallActor* InitialBall, const FHitResult& Hit)
+FVector UPhysicsSolverBlueprintBase::OtherBallCollisionSetExitDirection_Implementation(const TArray<ABallActor*>& OtherBalls, ABallActor* UnModifiedBall, ABallActor* InitialBall, const FHitResult& Hit)
 {
 	return FVector::ZeroVector;
 }
 
-float UPhysicsSolverBlueprintBase::OtherBallCollisionSetExitSpeed_Implementation(TArray<ABallActor*>& OtherBalls, ABallActor* UnModifiedBall, ABallActor* InitialBall, FVector OutDirection, const FHitResult& Hit)
+float UPhysicsSolverBlueprintBase::OtherBallCollisionSetExitSpeed_Implementation(const TArray<ABallActor*>& OtherBalls, ABallActor* UnModifiedBall, ABallActor* InitialBall, FVector OutDirection, const FHitResult& Hit)
 {
 	return 1;
 }
 
-FRotator UPhysicsSolverBlueprintBase::OtherBallCollisionSetAngularExitDirection_Implementation(TArray<ABallActor*>& OtherBalls, ABallActor* UnModifiedBall, ABallActor* InitialBall, const FHitResult& Hit)
+FRotator UPhysicsSolverBlueprintBase::OtherBallCollisionSetAngularExitDirection_Implementation(const TArray<ABallActor*>& OtherBalls, ABallActor* UnModifiedBall, ABallActor* InitialBall, const FHitResult& Hit)
 {
 	return FRotator::ZeroRotator;
 }
 
-float UPhysicsSolverBlueprintBase::OtherBallCollisionSetAngularExitSpeed_Implementation(TArray<ABallActor*>& OtherBalls, ABallActor* UnModifiedBall, ABallActor* InitialBall, FRotator OutDirection, const FHitResult& Hit)
+float UPhysicsSolverBlueprintBase::OtherBallCollisionSetAngularExitSpeed_Implementation(const TArray<ABallActor*>& OtherBalls, ABallActor* UnModifiedBall, ABallActor* InitialBall, FRotator OutDirection, const FHitResult& Hit)
 {
 	return 1;
 }
