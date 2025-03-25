@@ -228,7 +228,7 @@ void ABallActor::Tick(const float DeltaTime)
 	}
 
 	//recalculate the displacement
-	Displacement = GetActorLocation() - OldPositions.Last();
+	Displacement = GetActorLocation() - OldPositions[0];
 
 	//check if we're not using custom physics
 	if (!bUseCustomPhysics)
