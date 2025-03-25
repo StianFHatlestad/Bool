@@ -13,6 +13,7 @@
 #include "Components/BoxComponent.h"
 #include "Components/SphereComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "BoolGameInstance.h"
 
 
 APlayerPawn::APlayerPawn()
@@ -61,8 +62,8 @@ void APlayerPawn::BeginPlay()
 	//set the player controller show mouse cursor
 	PlayerController->bShowMouseCursor = true;
 
-	//set the turns this round to the default turns per round
-	TurnsThisRound = TurnsPerRound;
+	//get the game instance
+	GameInstance = Cast<UBoolGameInstance>(UGameplayStatics::GetGameInstance(this));
 
 	//set the start location of the cue ball
 	CueBallStartLocation = CueBall->GetActorLocation();
@@ -80,14 +81,21 @@ void APlayerPawn::Tick(const float DeltaTime)
 		AimLocation = GetMouseWorldPosition();
 	}
 
+	//check if the game instance is not valid
+	if (!GameInstance->IsValidLowLevel())
+	{
+		//return early to prevent further execution
+		return;
+	}
+
 	//check if the turn is in progress and we can shoot (all balls are stopped)
-	if (bTurnInProgress && CanShoot())
+	if (GameInstance->bTurnInProgress && CanShoot())
 	{
 		//call the OnTurnEnd function
 		OnTurnEnd();
 
 		//set turn in progress to false
-		bTurnInProgress = false;
+		GameInstance->bTurnInProgress = false;
 	}
 }
 
@@ -187,8 +195,15 @@ bool APlayerPawn::CanShoot() const
 		return false;
 	}
 
+	//check if the game instance is not valid
+	if (!GameInstance->IsValidLowLevel())
+	{
+		//return early to prevent further execution
+		return false;
+	}
+
 	//check if enough time hasn't passed since last turn
-	if (GetWorld()->GetTimeSeconds() < AvailableTurnTime)
+	if (GetWorld()->GetTimeSeconds() < GameInstance->AvailableTurnTime)
 	{
 		//return false
 		return false;
@@ -222,8 +237,18 @@ bool APlayerPawn::CanShoot() const
 
 void APlayerPawn::ShootCueBall(const FInputActionValue& Value)
 {
+	//check if the game instance is not valid
+	if (!GameInstance->IsValidLowLevel())
+	{
+		//print debug string
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("APlayerPawn::ShootCueBall Game Instance Not Valid"));
+
+		//return early to prevent further execution
+		return;
+	}
+
 	//check if there is a turn in progress or if we're not allowed to play or if we can't shoot given current conditions
-	if (bTurnInProgress || !bCanPlay || !CanShoot())
+	if (GameInstance->bTurnInProgress || !bCanPlay || !CanShoot())
 	{
 		//return early to prevent further execution
 		return;
@@ -255,10 +280,10 @@ void APlayerPawn::ShootCueBall(const FInputActionValue& Value)
 		ShootCueBallAtPosition(Direction * LocCurrentShotSpeed, NAME_None);
 
 		//set turn in progress to true
-		bTurnInProgress = true;
+		GameInstance->bTurnInProgress = true;
 
 		//set the next available turn time
-		AvailableTurnTime = GetWorld()->GetTimeSeconds() + MinTurnTime;
+		GameInstance->AvailableTurnTime = GetWorld()->GetTimeSeconds() + GameInstance->MinTurnTime;
 
 		//toggle locking the shooting trajectory
 		bLockedShotTrajectory = !bLockedShotTrajectory;
@@ -303,6 +328,16 @@ FVector APlayerPawn::GetMouseWorldPosition() const
 
 bool APlayerPawn::HandleBallInGoal(AGoalActor* Goal, AActor* BallActor)
 {
+	//check if the game instance is not valid
+	if (!GameInstance->IsValidLowLevel())
+	{
+		//print debug string
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("APlayerPawn::HandleBallInGoal Game Instance Not Valid"));
+
+		//return early to prevent further execution
+		return false;
+	}
+
 	//check if the ball actor is not valid or if the ball actor is not a ball actor
 	if (!BallActor->IsValidLowLevelFast() || !BallActor->IsA(ABallActor::StaticClass()))
 	{
@@ -330,10 +365,10 @@ bool APlayerPawn::HandleBallInGoal(AGoalActor* Goal, AActor* BallActor)
 		if (Ball->CurrentTurnData)
 		{
 			//add the score to the player score
-			PlayerScore += Ball->CurrentTurnData->ScoreToGive;
+			GameInstance->PlayerScore += Ball->CurrentTurnData->ScoreToGive;
 
 			//add the gold to the player gold
-			PlayerGold += Ball->CurrentTurnData->GoldToGive;
+			GameInstance->PlayerGold += Ball->CurrentTurnData->GoldToGive;
 		}
 
 		//destroy the ball actor
@@ -359,11 +394,21 @@ bool APlayerPawn::HandleBallInGoal(AGoalActor* Goal, AActor* BallActor)
 
 void APlayerPawn::OnTurnEnd()
 {
+	//check if the game instance is not valid
+	if (!GameInstance->IsValidLowLevel())
+	{
+		//print debug string
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("APlayerPawn::OnTurnEnd Game Instance Not Valid"));
+
+		//return early to prevent further execution
+		return;
+	}
+
 	//add on screen debug message
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, TEXT("Turn Ended. Current Turn: " + FString::FromInt(CurrentTurn)));
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, TEXT("Turn Ended. Current Turn: " + FString::FromInt(GameInstance->CurrentTurn)));
 
 	//increment the current turn
-	CurrentTurn++;
+	GameInstance->CurrentTurn++;
 
 	//get all goal actors in the world
 	TArray<AActor*> GoalActors;
@@ -390,8 +435,11 @@ void APlayerPawn::OnTurnEnd()
 	//call the blueprint OnTurnEnd function
 	OnTurnEndBP();
 
+	//call the OnTurnEnd function of the game instance
+	GameInstance->OnTurnEndBP();
+
 	//check if the current turn is greater than or equal to the turns this round
-	if (CurrentTurn >= TurnsThisRound)
+	if (GameInstance->CurrentTurn >= GameInstance->TurnsThisRound + GameInstance->RoundStartTurn)
 	{
 		//call the OnRoundEnd function
 		OnRoundEnd();
@@ -400,12 +448,15 @@ void APlayerPawn::OnTurnEnd()
 
 void APlayerPawn::OnRoundEnd()
 {
-	//set the current turn to 0
-	CurrentTurn = 0;
-
 	//set can play to false
 	bCanPlay = false;
 
 	//call the blueprint OnRoundEnd function
 	OnRoundEndBP();
+
+	//call the blueprint OnRoundEnd function of the game instance
+	GameInstance->OnRoundEndBP();
+
+	//set the round start turn to the current turn
+	GameInstance->RoundStartTurn = GameInstance->CurrentTurn;
 }
