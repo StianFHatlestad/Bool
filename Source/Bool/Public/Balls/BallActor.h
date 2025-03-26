@@ -6,7 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "BallActor.generated.h"
 
-class UPhysicsSolverBlueprintBase;
+class APhysicsSolverBlueprintBase;
 class ABallActor;
 class UBallUpgradeDataAsset;
 
@@ -88,6 +88,8 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	USphereComponent* BallDetectionComponent;
 
+	//storage for our ph
+
 	//whether or not to use debug mode
 	UPROPERTY(EditAnywhere, Category = "BoolData|Debug")
 	bool bDebugMode = false;
@@ -120,17 +122,17 @@ public:
 	UPROPERTY(EditAnywhere, Category = "BoolData|Debug", meta = (EditCondition = "bDebugMode", EditConditionHides))
 	TArray<FVector> OldVelocities = {FVector::ZeroVector};
 
+	//the amount of score this ball will give when the player scores it
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Score")
+	float ScoreValue = 100;
+
 	//the player pawn in the level (for blueprint access
 	UPROPERTY(BlueprintReadOnly)
 	class APlayerPawn* PlayerPawn = nullptr;
 
-	//the current physics solver class of the ball
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BoolData|Physics")
-	TSubclassOf<class UPhysicsSolverBlueprintBase> PhysicsSolverClass;
-
 	//the current physics solver of the ball
 	UPROPERTY(BlueprintReadOnly, Category = "BoolData|Physics")
-	TObjectPtr<UPhysicsSolverBlueprintBase> PhysicsSolver;
+	TObjectPtr<APhysicsSolverBlueprintBase> PhysicsSolver;
 
 	//the current turn data for the ball
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BoolData|Turns")
