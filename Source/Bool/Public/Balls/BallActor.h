@@ -88,7 +88,9 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	USphereComponent* BallDetectionComponent;
 
-	//storage for our ph
+	//storage for our game instance
+	UPROPERTY(BlueprintReadOnly)
+	class UBoolGameInstance* GameInstance;
 
 	//whether or not to use debug mode
 	UPROPERTY(EditAnywhere, Category = "BoolData|Debug")
