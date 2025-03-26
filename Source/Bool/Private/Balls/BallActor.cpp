@@ -3,6 +3,8 @@
 
 #include "Balls/BallActor.h"
 
+#include <BoolGameInstance.h>
+
 #include "PhysicsSolverBlueprintBase.h"
 #include "Balls/BallUpgradeDataAsset.h"
 #include "Bool/GoalActor.h"
@@ -191,6 +193,16 @@ void ABallActor::BeginPlay()
 	{
 		//set the physics solver
 		PhysicsSolver = Cast<APhysicsSolverBlueprintBase>(LocPhysSolver);
+	}
+
+	//get the game instance
+	class UGameInstance* LocGameInst = UGameplayStatics::GetGameInstance(this);;
+
+	//check if the game instance is valid
+	if (LocGameInst->IsValidLowLevelFast())
+	{
+		//set the game instance
+		GameInstance = Cast<UBoolGameInstance>(LocGameInst);
 	}
 
 	//get all actors with the ignore collision tag
@@ -900,6 +912,19 @@ bool ABallActor::ProcessHit(const FHitResult& HitResult, AActor* OtherActor)
 			//call the OnWallHit function
 			BallUpgradeDataAsset.Get()->GetDefaultObject<UBallUpgradeDataAsset>()->OnGoal(this, GoalActor);
 		}
+
+		//check if we don't have a valid game instance
+		if (!GameInstance->IsValidLowLevelFast())
+		{
+			//reset our velocities
+			ErrorResetVelocities(GetActorNameOrLabel() + " Has No Valid GameInstance");
+
+			//return early to prevent further execution
+			return false;
+		}
+
+		//call the game instance's OnBallGoal function
+		GameInstance->OnBallScoredBP(this, GoalActor);
 
 		//return early to prevent further execution
 		return true;
