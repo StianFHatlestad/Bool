@@ -131,7 +131,7 @@ void APlayerPawn::ShootCueBallAtPosition(FVector NewVelocity, const FName BoneNa
 	const FVector PerpendicularVector = FVector(AimToCueBall.Y, -AimToCueBall.X, 0);
 
 	//get the location on the cue ball we're hitting
-	FVector AngularDir = (AimToCueBall * CueBallHitLocation.Y + PerpendicularVector * CueBallHitLocation.X).GetSafeNormal();
+	FVector AngularDir = (AimToCueBall * -CueBallHitLocation.Y + PerpendicularVector * CueBallHitLocation.X).GetSafeNormal();
 
 	//get the angular impulse
 	const FVector AngularImpulse = AngularDir * NewVelocity.Length();
