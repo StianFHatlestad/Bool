@@ -121,69 +121,33 @@ void APlayerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 
 void APlayerPawn::ShootCueBallAtPosition(FVector NewVelocity, const FName BoneName) const
 {
-	//convert the location to a point on the cue ball
-	const FVector LocationToHit = ConvertLocationToCueBall(CueBallHitLocation);
+	//get the cue ball location
+	const FVector CueBallLocation = CueBall->GetActorLocation();
 
-	//calculate the world center of mass
-	const Chaos::FVec3 WorldCOM = CueBall->SphereComponent->GetComponentLocation() + CueBall->SphereComponent->GetComponentRotation().RotateVector(CueBall->SphereComponent->GetCenterOfMass());
+	//get the vector from the aim location to the cue ball location normalized
+	const FVector AimToCueBall = (CueBallLocation - AimLocation).GetSafeNormal();
 
-	//calculate the angular impulse
-	const Chaos::FVec3 AngularImpulse = Chaos::FVec3::CrossProduct(LocationToHit - WorldCOM, NewVelocity);
+	//get a vector perpendicular to the aim to cue ball vector
+	const FVector PerpendicularVector = FVector(AimToCueBall.Y, -AimToCueBall.X, 0);
+
+	//get the location on the cue ball we're hitting
+	FVector AngularDir = (AimToCueBall * CueBallHitLocation.Y + PerpendicularVector * CueBallHitLocation.X).GetSafeNormal();
+
+	//get the angular impulse
+	const FVector AngularImpulse = AngularDir * NewVelocity.Length();
+
+	//the angular rotaion to give the cue ball
+	FRotator OutPutAngularVelocity = FRotator(AngularImpulse.X, AngularImpulse.Y, 0);
 
 	//add the impulse to the cue ball
 	CueBall->SetBallVelocity(NewVelocity);
-	CueBall->SetBallAngularVelocity(AngularImpulse.Rotation());
+	CueBall->SetBallAngularVelocity(OutPutAngularVelocity);
 }
 
 void APlayerPawn::SetCueBallHitLocation(const FVector2D HitLocation)
 {
 	//set the cue ball hit location
 	CueBallHitLocation = HitLocation;
-}
-
-FVector APlayerPawn::ConvertLocationToCueBall(const FVector2D InLocation) const
-{
-	//the local aimlocation
-	FVector LocAimLocation = FVector(AimLocation.X, AimLocation.Y, CueBall->GetActorLocation().Z);
-
-	//direction from the aim location to the cue ball
-	const FVector AimDirection = (CueBall->GetActorLocation() - LocAimLocation).GetSafeNormal();
-
-	//storage for the hit result
-	FHitResult HitResult;
-
-	//do a line trace to get the hit result
-	GetWorld()->LineTraceSingleByChannel(HitResult, LocAimLocation, LocAimLocation + AimDirection * 10000, ECC_Visibility);
-
-	//check if the hit result is not valid
-	if (!HitResult.IsValidBlockingHit())
-	{
-		//print a debug message
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("No Hit Result Found"));
-
-		//return early to prevent further execution
-		return FVector::ZeroVector;
-	}
-
-	
-	//get the x axis direction
-	const FVector XAxisDirection = FVector::CrossProduct(AimDirection, FVector::UpVector).GetSafeNormal() * -1;
-
-	//storage for the x axis location
-	const FVector XAxisLocation = CueBall->SphereComponent->GetScaledSphereRadius() * XAxisDirection * InLocation.X;
-
-	//get the y axis direction
-	const FVector YAxisDirection = FVector::CrossProduct(AimDirection, FVector::RightVector).GetSafeNormal();
-
-	//storage for the y axis location
-	const FVector YAxisLocation = CueBall->SphereComponent->GetScaledSphereRadius() * YAxisDirection * InLocation.Y;
-
-	//set the return value
-	const FVector ReturnValue = CueBall->GetActorLocation() + XAxisLocation + YAxisLocation + HitResult.ImpactPoint - CueBall->GetActorLocation();
-
-	//return the return result
-	return ReturnValue;
-	
 }
 
 bool APlayerPawn::CanShoot() const
@@ -437,26 +401,4 @@ void APlayerPawn::OnTurnEnd()
 
 	//call the OnTurnEnd function of the game instance
 	GameInstance->OnTurnEndBP();
-
-	//check if the current turn is greater than or equal to the turns this round
-	if (GameInstance->CurrentTurn >= GameInstance->TurnsThisRound + GameInstance->RoundStartTurn)
-	{
-		//call the OnRoundEnd function
-		OnRoundEnd();
-	}
-}
-
-void APlayerPawn::OnRoundEnd()
-{
-	//set can play to false
-	bCanPlay = false;
-
-	//call the blueprint OnRoundEnd function
-	OnRoundEndBP();
-
-	//call the blueprint OnRoundEnd function of the game instance
-	GameInstance->OnRoundEndBP();
-
-	//set the round start turn to the current turn
-	GameInstance->RoundStartTurn = GameInstance->CurrentTurn;
 }

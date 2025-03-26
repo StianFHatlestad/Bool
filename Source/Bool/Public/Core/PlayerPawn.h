@@ -98,10 +98,6 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetCueBallHitLocation(FVector2D HitLocation);
 
-	//function to convert the fvector2d location to a point on the cue ball
-	UFUNCTION(BlueprintCallable)
-	FVector ConvertLocationToCueBall(FVector2D InLocation) const;
-
 	//function to check if we can shoot
 	UFUNCTION(BlueprintCallable)
 	bool CanShoot() const;
@@ -125,17 +121,9 @@ public:
 	UFUNCTION()
 	void OnTurnEnd();
 
-	//function called when the round ends
-	UFUNCTION()
-	void OnRoundEnd();
-
 	//blueprint events
 
 	//event called when the turn ends
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnTurnEndBP();
-
-	//event called when the round ends
-	UFUNCTION(BlueprintImplementableEvent)
-	void OnRoundEndBP();
 };
