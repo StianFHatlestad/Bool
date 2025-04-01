@@ -42,10 +42,6 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnTurnEndBP();
 
-	//event called when the round ends
-	UFUNCTION(BlueprintImplementableEvent)
-	void OnRoundEndBP();
-
 	//event called when a ball is scored
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnBallScoredBP(ABallActor* BallActor, AGoalActor* GoalActor);

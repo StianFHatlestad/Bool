@@ -14,6 +14,7 @@
 #include "Components/SphereComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "BoolGameInstance.h"
+#include "GameFramework/PhysicsVolume.h"
 
 
 APlayerPawn::APlayerPawn()
@@ -64,9 +65,6 @@ void APlayerPawn::BeginPlay()
 
 	//get the game instance
 	GameInstance = Cast<UBoolGameInstance>(UGameplayStatics::GetGameInstance(this));
-
-	//set the start location of the cue ball
-	CueBallStartLocation = CueBall->GetActorLocation();
 }
 
 void APlayerPawn::Tick(const float DeltaTime)
@@ -121,27 +119,50 @@ void APlayerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 
 void APlayerPawn::ShootCueBallAtPosition(FVector NewVelocity, const FName BoneName) const
 {
-	//get the cue ball location
-	const FVector CueBallLocation = CueBall->GetActorLocation();
+	//check if we don't have a valid deflection float curve and shot strength curve and spin strength curve
+	if (!(DeflectionCurve->IsValidLowLevelFast() && ShotStrengthCurve->IsValidLowLevelFast() && SpinStrengthCurve->IsValidLowLevelFast()))
+	{
+		//print debug message to the screen
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("APlayerPawn::ShootCueBallAtPosition No valid Deflection Curve, Shot Strength Curve, or Spin Strength Curve"));
+	}
 
 	//get the vector from the aim location to the cue ball location normalized
-	const FVector AimToCueBall = (CueBallLocation - AimLocation).GetSafeNormal();
+	const FVector AimToCueBall = (CueBall->GetActorLocation() - AimLocation).GetSafeNormal();
 
 	//get a vector perpendicular to the aim to cue ball vector
 	const FVector PerpendicularVector = FVector(AimToCueBall.Y, -AimToCueBall.X, 0);
 
-	//get the location on the cue ball we're hitting
-	FVector AngularDir = (AimToCueBall * -CueBallHitLocation.Y + PerpendicularVector * CueBallHitLocation.X).GetSafeNormal();
+	//get the deflection float curve value
+	const float DeflectionFloatCurveValue = DeflectionCurve->GetFloatValue(CueBallHitLocation.X);
 
-	//get the angular impulse
-	const FVector AngularImpulse = AngularDir * NewVelocity.Length();
+	//get the shot strength curve value
+	const float ShotStrengthCurveValue = ShotStrengthCurve->GetFloatValue(FVector::DotProduct(AimToCueBall, NewVelocity.GetSafeNormal()));
+
+	//get the spin strength curve value
+	const float SpinStrengthCurveValue = SpinStrengthCurve->GetFloatValue(NewVelocity.Length() / GetWorld()->GetDefaultPhysicsVolume()->TerminalVelocity);
+
+	//storage for the new velocity of the cue ball
+	const FVector LocNewVelocity = (NewVelocity.GetSafeNormal() * (1 - DeflectionFloatCurveValue) + PerpendicularVector * DeflectionFloatCurveValue) * NewVelocity.Size() * ShotStrengthCurveValue;
+
+	//storage for the pitch component of the angular velocity to give the cue ball
+	float Pitch = FVector::DotProduct(-NewVelocity.GetSafeNormal(), FVector::XAxisVector) * CueBallHitLocation.Y;
+
+	//storage for the side spin component of the pitch
+	float PitchSideSpin = FVector::DotProduct(NewVelocity.GetSafeNormal(), FVector::XAxisVector) * -CueBallHitLocation.X * FMath::Sign(FVector::DotProduct(NewVelocity.GetSafeNormal(), FVector::XAxisVector));
+
+	//storage for the roll component of the angular velocity to give the cue ball
+	float Roll = FVector::DotProduct(NewVelocity.GetSafeNormal(), FVector::YAxisVector) * CueBallHitLocation.Y;
+
+	//storage for the side spin component of the roll
+	float RollSideSpin = FVector::DotProduct(NewVelocity.GetSafeNormal(), FVector::YAxisVector) * -CueBallHitLocation.X * FMath::Sign(FVector::DotProduct(NewVelocity.GetSafeNormal(), FVector::YAxisVector));
 
 	//the angular rotaion to give the cue ball
-	FRotator OutPutAngularVelocity = FRotator(AngularImpulse.X, AngularImpulse.Y, 0);
+	FRotator OutPutAngularVelocity = FRotator(Pitch, PitchSideSpin + RollSideSpin, Roll) * SpinStrengthCurveValue * NewVelocity.Length();
 
 	//add the impulse to the cue ball
-	CueBall->SetBallVelocity(NewVelocity);
+	CueBall->SetBallVelocity(LocNewVelocity);
 	CueBall->SetBallAngularVelocity(OutPutAngularVelocity);
+	
 }
 
 void APlayerPawn::SetCueBallHitLocation(const FVector2D HitLocation)
@@ -344,7 +365,7 @@ bool APlayerPawn::HandleBallInGoal(AGoalActor* Goal, AActor* BallActor)
 		const TObjectPtr<ABallActor> LocCueBall = Cast<ABallActor>(Ball);
 
 		//set the location of the cue ball back to the start position
-		LocCueBall->SetActorLocation(CueBallStartLocation);
+		LocCueBall->SetActorLocation(LocCueBall->StartLocation);
 
 		//set the linear velocity to zero
 		LocCueBall->SphereComponent->SetAllPhysicsLinearVelocity(FVector::Zero());

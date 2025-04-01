@@ -185,6 +185,9 @@ void ABallActor::BeginPlay()
 	//call the parent implementation
 	Super::BeginPlay();
 
+	//set our start location
+	StartLocation = GetActorLocation();
+
 	//get the physics solver
 	AActor* LocPhysSolver = UGameplayStatics::GetActorOfClass(this, APhysicsSolverBlueprintBase::StaticClass());
 
@@ -289,7 +292,7 @@ void ABallActor::Tick(const float DeltaTime)
 		if (!HitResult.IsValidBlockingHit())
 		{
 			//set the location to the box position
-			SetActorLocation(BoxPosition);
+			SetActorLocation(StartLocation);
 		}
 		else
 		{
@@ -311,6 +314,12 @@ void ABallActor::Tick(const float DeltaTime)
 		OldPositions.RemoveAt(0);
 	}
 
+}
+
+FVector ABallActor::GetBallAngularVelocityVec() const
+{
+	//return the angular velocity
+	return AngularVelocity.Euler();
 }
 
 //void ABallActor::UpdateBoolPhysicsState(const float DeltaTime)
