@@ -754,6 +754,64 @@ bool ABallActor::ProcessHit(const FHitResult& HitResult, AActor* OtherActor)
 	//check if we're overlapping a ball actor
 	if (OtherActor->IsA(StaticClass()))
 	{
+		//empty the overlapping balls array
+		OverlappingBalls.Empty();
+
+		//iterate over the player pawns level ball actors
+		for (ABallActor* BallActor : PlayerPawn->LevelBallActors)
+		{
+			//check if the ball actor is not valid
+			if (!BallActor->IsValidLowLevelFast())
+			{
+				//skip this iteration
+				continue;
+			}
+
+			//check if the ball actor is ourselves
+			if (BallActor == this)
+			{
+				//skip this iteration
+				continue;
+			}
+
+
+			//check if the distance between the balls is greater than the other balls radius + the size of the detection sphere
+			if ((BallActor->GetActorLocation() - GetActorLocation()).Size() > BallActor->SphereComponent->GetScaledSphereRadius() + BallDetectionComponent->GetScaledSphereRadius())
+			{
+				//skip this iteration
+				continue;
+			}
+
+			//storage for the closest point
+			FVector ClosestPoint = UKismetMathLibrary::FindClosestPointOnLine(BallActor->GetActorLocation(), GetActorLocation(), BallActor->GetBallVelocity());
+
+			////check if the other ball is not moving
+			//if (BallActor->GetBallVelocity().IsNearlyZero())
+			//{
+			//	//Storage for the ball actor location
+			//	FVector BallActorLocation = BallActor->GetActorLocation();
+
+			//	//storage for the size of the vector between the closest point and the other ball actor
+			//	float ClosestPointSize = (ClosestPoint - BallActorLocation).Size();
+
+			//	//storage for the combined radii of the 2 balls
+			//	float CombinedRadii = SphereComponent->GetScaledSphereRadius() + BallActor->SphereComponent->GetScaledSphereRadius();
+
+			//	//check if the distance between the closest point and the other ball actor is less than or equal the radius of the other ball actor and our detectionsphere
+			//	if (ClosestPointSize < CombinedRadii)
+			//	{
+			//		//add the ball to the overlapping balls array
+			//		OverlappingBalls.AddUnique(BallActor);
+			//	}
+
+			//	//skip further execution on this iteration
+			//	continue;
+			//}
+
+			//add the ball to the overlapping balls array
+			OverlappingBalls.AddUnique(BallActor);
+		}
+
 		//cast the other actor to a ball actor
 		const TObjectPtr<ABallActor> OtherBallActor = Cast<ABallActor>(OtherActor);
 
@@ -839,7 +897,7 @@ bool ABallActor::ProcessHit(const FHitResult& HitResult, AActor* OtherActor)
 		for (int i = 0; i < OverlappingBalls.Num(); i++)
 		{
 			//get the exit direction
-			const FVector OtherBallExitDirection = PhysicsSolver->OtherBallCollisionSetExitDirection(OverlappingBalls[i]->OverlappingBalls, OverlappingBalls[i], this, HitResult);
+			const FVector OtherBallExitDirection = PhysicsSolver->OtherBallCollisionSetExitDirection(OverlappingBalls[i]->OverlappingBalls, OverlappingBalls[i], this, ExitDirection, HitResult);
 
 			//get the exit speed
 			const float OtherBallExitSpeed = PhysicsSolver->OtherBallCollisionSetExitSpeed(OverlappingBalls[i]->OverlappingBalls, OverlappingBalls[i], this, ExitDirection, HitResult);

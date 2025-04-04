@@ -66,6 +66,10 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category="BoolData")
 	bool bLockedShotTrajectory = false;
 
+	//the amount of delay before the shot happens (for animations)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData")
+	float ShotDelay = 0;
+
 	//the shot speed multipler
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="BoolData")
 	float ShotSpeedMultiplier = 2;
@@ -89,6 +93,10 @@ public:
 	//the current location the player is aiming from
 	UPROPERTY(BlueprintReadOnly)
 	FVector AimLocation = FVector::ZeroVector;
+
+	//storage for all of the balls in the level
+	UPROPERTY()
+	TArray<ABallActor*> LevelBallActors;
 
 	//constructor(s)
 	APlayerPawn();
