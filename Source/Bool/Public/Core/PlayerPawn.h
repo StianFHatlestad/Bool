@@ -23,7 +23,7 @@ public:
 	TObjectPtr<class UCameraComponent> CameraComponent = nullptr;
 
 	//the current cue ball we're using
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadWrite)
 	TObjectPtr<ABallActor> CueBall = nullptr;
 
 	//reference to the player controller
