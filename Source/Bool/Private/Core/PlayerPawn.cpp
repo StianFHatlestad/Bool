@@ -241,9 +241,6 @@ bool APlayerPawn::CanShoot() const
 
 void APlayerPawn::ShootCueBall(const FInputActionValue& Value)
 {
-	//print debug string
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("APlayerPawn::ShootCueBall Got Here"));
-
 	//check if the game instance is not valid
 	if (!GameInstance->IsValidLowLevel())
 	{

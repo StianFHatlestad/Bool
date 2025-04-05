@@ -35,7 +35,7 @@ public:
 	int CurrentTurn = 1;
 
 	//whether or not a turn is currently in progress
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bTurnInProgress = false;
 
 	//event called when the turn ends
