@@ -236,9 +236,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics|Collision")
 	bool bOnlyProcessHighestSpeedCollision = false;
 
-	//the maximum relative speed gain from a collision between 2 balls (percentage)
+	////the maximum relative speed gain from a collision between 2 balls (percentage)
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics|Collision")
+	//float MaxRelativeSpeedGain = -1;
+
+	//the float curve for max relative speed gain
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics|Collision")
-	float MaxRelativeSpeedGain = -1;
+	UCurveFloat* MaxRelativeSpeedGainCurve = nullptr;
 
 	////the first frictional constant for ball to ball collisions
 	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics|Collision")
@@ -251,6 +255,10 @@ public:
 	////the third frictional constant for ball to ball collisions
 	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics|Collision")
 	//float BallBallFrictionC = 1.088;
+
+	//storage for our start location
+	UPROPERTY()
+	FVector StartLocation = FVector::ZeroVector;
 
 	//the position of the box we use to check if we're outside the table
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics")
@@ -274,6 +282,10 @@ public:
 	////function to update the physics variables of the ball
 	//UFUNCTION(BlueprintCallable)
 	//void UpdatePhysicsVariables(float DeltaTime);
+
+	//function to get the ball velocity as a vector
+	UFUNCTION(BlueprintCallable)
+	FVector GetBallAngularVelocityVec() const;
 
 	//function to set the bool physics state
 	UFUNCTION(BlueprintCallable)

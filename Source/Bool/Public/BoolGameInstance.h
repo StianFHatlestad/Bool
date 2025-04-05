@@ -35,16 +35,12 @@ public:
 	int CurrentTurn = 1;
 
 	//whether or not a turn is currently in progress
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bTurnInProgress = false;
 
 	//event called when the turn ends
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnTurnEndBP();
-
-	//event called when the round ends
-	UFUNCTION(BlueprintImplementableEvent)
-	void OnRoundEndBP();
 
 	//event called when a ball is scored
 	UFUNCTION(BlueprintImplementableEvent)
