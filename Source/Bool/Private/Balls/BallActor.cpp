@@ -500,11 +500,14 @@ void ABallActor::DrawVelChangeDebugArrows()
 	//the thickness of the arrow
 	const float Thickness = UniqueDebugArrows ? 1 : .5;
 
+	//get the global time dilation
+	const float GlobalTimeDilation = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
+
 	//draw a debug arrow in the old velocity direction
-	DrawDebugDirectionalArrow(GetWorld(), GetActorLocation(), GetActorLocation() + OldVelocities.Last(), 100, OldVelColour, UniqueDebugArrows, 5, DepthPriority, Thickness);
+	DrawDebugDirectionalArrow(GetWorld(), GetActorLocation(), GetActorLocation() + OldVelocities.Last(), 100, OldVelColour, UniqueDebugArrows, 5 * GlobalTimeDilation, DepthPriority, Thickness);
 
 	//draw a debug arrow in the new velocity direction
-	DrawDebugDirectionalArrow(GetWorld(), GetActorLocation(), GetActorLocation() + GetBallVelocity(), 100, NewVelColour, UniqueDebugArrows, 5, DepthPriority, Thickness);
+	DrawDebugDirectionalArrow(GetWorld(), GetActorLocation(), GetActorLocation() + GetBallVelocity(), 100, NewVelColour, UniqueDebugArrows, 5 * GlobalTimeDilation, DepthPriority, Thickness);
 }
 
 //bool ABallActor::ProcessBallHit(AActor* OtherActor, const FHitResult& Hit)
@@ -783,8 +786,8 @@ bool ABallActor::ProcessHit(const FHitResult& HitResult, AActor* OtherActor)
 				continue;
 			}
 
-			//storage for the closest point
-			FVector ClosestPoint = UKismetMathLibrary::FindClosestPointOnLine(BallActor->GetActorLocation(), GetActorLocation(), BallActor->GetBallVelocity());
+			////storage for the closest point
+			//FVector ClosestPoint = UKismetMathLibrary::FindClosestPointOnLine(BallActor->GetActorLocation(), GetActorLocation(), BallActor->GetBallVelocity());
 
 			////check if the other ball is not moving
 			//if (BallActor->GetBallVelocity().IsNearlyZero())
