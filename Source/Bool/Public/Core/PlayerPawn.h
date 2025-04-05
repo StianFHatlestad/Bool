@@ -46,6 +46,18 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Inputsystem")
 	TObjectPtr<UInputAction> IA_ResetAim = nullptr;
 
+	//the deflection float curve for hitting the cue ball
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData")
+	UCurveFloat* DeflectionCurve = nullptr;
+
+	//the float curve for the strength of the shot
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData")
+	UCurveFloat* ShotStrengthCurve = nullptr;
+	
+	//the spin strength float curve for hitting the cue ball
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData")
+	UCurveFloat* SpinStrengthCurve = nullptr;
+
 	//the tag for the cue ball
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData")
 	FName CueBallTag = FName("CueBallTag");
@@ -53,6 +65,10 @@ public:
 	//bool for checking if the cue ball trajectory is being set
 	UPROPERTY(BlueprintReadOnly, Category="BoolData")
 	bool bLockedShotTrajectory = false;
+
+	//the amount of delay before the shot happens (for animations)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData")
+	float ShotDelay = 0;
 
 	//the shot speed multipler
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="BoolData")
@@ -78,9 +94,9 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	FVector AimLocation = FVector::ZeroVector;
 
-	//the start location of the cue ball
-	UPROPERTY(BlueprintReadOnly)
-	FVector CueBallStartLocation = FVector::ZeroVector;
+	//storage for all of the balls in the level
+	UPROPERTY()
+	TArray<ABallActor*> LevelBallActors;
 
 	//constructor(s)
 	APlayerPawn();

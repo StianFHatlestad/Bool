@@ -10,6 +10,7 @@
 #include "Bool/GoalActor.h"
 #include "Components/SphereComponent.h"
 #include "Core/PlayerPawn.h"
+#include "GameFramework/PhysicsVolume.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Math/MathFwd.h"
@@ -185,6 +186,9 @@ void ABallActor::BeginPlay()
 	//call the parent implementation
 	Super::BeginPlay();
 
+	//set our start location
+	StartLocation = GetActorLocation();
+
 	//get the physics solver
 	AActor* LocPhysSolver = UGameplayStatics::GetActorOfClass(this, APhysicsSolverBlueprintBase::StaticClass());
 
@@ -289,7 +293,7 @@ void ABallActor::Tick(const float DeltaTime)
 		if (!HitResult.IsValidBlockingHit())
 		{
 			//set the location to the box position
-			SetActorLocation(BoxPosition);
+			SetActorLocation(StartLocation);
 		}
 		else
 		{
@@ -311,6 +315,12 @@ void ABallActor::Tick(const float DeltaTime)
 		OldPositions.RemoveAt(0);
 	}
 
+}
+
+FVector ABallActor::GetBallAngularVelocityVec() const
+{
+	//return the angular velocity
+	return AngularVelocity.Euler();
 }
 
 //void ABallActor::UpdateBoolPhysicsState(const float DeltaTime)
@@ -490,11 +500,14 @@ void ABallActor::DrawVelChangeDebugArrows()
 	//the thickness of the arrow
 	const float Thickness = UniqueDebugArrows ? 1 : .5;
 
+	//get the global time dilation
+	const float GlobalTimeDilation = UGameplayStatics::GetGlobalTimeDilation(GetWorld());
+
 	//draw a debug arrow in the old velocity direction
-	DrawDebugDirectionalArrow(GetWorld(), GetActorLocation(), GetActorLocation() + OldVelocities.Last(), 100, OldVelColour, UniqueDebugArrows, 5, DepthPriority, Thickness);
+	DrawDebugDirectionalArrow(GetWorld(), GetActorLocation(), GetActorLocation() + OldVelocities.Last(), 100, OldVelColour, UniqueDebugArrows, 5 * GlobalTimeDilation, DepthPriority, Thickness);
 
 	//draw a debug arrow in the new velocity direction
-	DrawDebugDirectionalArrow(GetWorld(), GetActorLocation(), GetActorLocation() + GetBallVelocity(), 100, NewVelColour, UniqueDebugArrows, 5, DepthPriority, Thickness);
+	DrawDebugDirectionalArrow(GetWorld(), GetActorLocation(), GetActorLocation() + GetBallVelocity(), 100, NewVelColour, UniqueDebugArrows, 5 * GlobalTimeDilation, DepthPriority, Thickness);
 }
 
 //bool ABallActor::ProcessBallHit(AActor* OtherActor, const FHitResult& Hit)
@@ -745,6 +758,64 @@ bool ABallActor::ProcessHit(const FHitResult& HitResult, AActor* OtherActor)
 	//check if we're overlapping a ball actor
 	if (OtherActor->IsA(StaticClass()))
 	{
+		//empty the overlapping balls array
+		OverlappingBalls.Empty();
+
+		//iterate over the player pawns level ball actors
+		for (ABallActor* BallActor : PlayerPawn->LevelBallActors)
+		{
+			//check if the ball actor is not valid
+			if (!BallActor->IsValidLowLevelFast())
+			{
+				//skip this iteration
+				continue;
+			}
+
+			//check if the ball actor is ourselves
+			if (BallActor == this)
+			{
+				//skip this iteration
+				continue;
+			}
+
+
+			//check if the distance between the balls is greater than the other balls radius + the size of the detection sphere
+			if ((BallActor->GetActorLocation() - GetActorLocation()).Size() > BallActor->SphereComponent->GetScaledSphereRadius() + BallDetectionComponent->GetScaledSphereRadius())
+			{
+				//skip this iteration
+				continue;
+			}
+
+			////storage for the closest point
+			//FVector ClosestPoint = UKismetMathLibrary::FindClosestPointOnLine(BallActor->GetActorLocation(), GetActorLocation(), BallActor->GetBallVelocity());
+
+			////check if the other ball is not moving
+			//if (BallActor->GetBallVelocity().IsNearlyZero())
+			//{
+			//	//Storage for the ball actor location
+			//	FVector BallActorLocation = BallActor->GetActorLocation();
+
+			//	//storage for the size of the vector between the closest point and the other ball actor
+			//	float ClosestPointSize = (ClosestPoint - BallActorLocation).Size();
+
+			//	//storage for the combined radii of the 2 balls
+			//	float CombinedRadii = SphereComponent->GetScaledSphereRadius() + BallActor->SphereComponent->GetScaledSphereRadius();
+
+			//	//check if the distance between the closest point and the other ball actor is less than or equal the radius of the other ball actor and our detectionsphere
+			//	if (ClosestPointSize < CombinedRadii)
+			//	{
+			//		//add the ball to the overlapping balls array
+			//		OverlappingBalls.AddUnique(BallActor);
+			//	}
+
+			//	//skip further execution on this iteration
+			//	continue;
+			//}
+
+			//add the ball to the overlapping balls array
+			OverlappingBalls.AddUnique(BallActor);
+		}
+
 		//cast the other actor to a ball actor
 		const TObjectPtr<ABallActor> OtherBallActor = Cast<ABallActor>(OtherActor);
 
@@ -830,7 +901,7 @@ bool ABallActor::ProcessHit(const FHitResult& HitResult, AActor* OtherActor)
 		for (int i = 0; i < OverlappingBalls.Num(); i++)
 		{
 			//get the exit direction
-			const FVector OtherBallExitDirection = PhysicsSolver->OtherBallCollisionSetExitDirection(OverlappingBalls[i]->OverlappingBalls, OverlappingBalls[i], this, HitResult);
+			const FVector OtherBallExitDirection = PhysicsSolver->OtherBallCollisionSetExitDirection(OverlappingBalls[i]->OverlappingBalls, OverlappingBalls[i], this, ExitDirection, HitResult);
 
 			//get the exit speed
 			const float OtherBallExitSpeed = PhysicsSolver->OtherBallCollisionSetExitSpeed(OverlappingBalls[i]->OverlappingBalls, OverlappingBalls[i], this, ExitDirection, HitResult);
@@ -859,6 +930,16 @@ bool ABallActor::ProcessHit(const FHitResult& HitResult, AActor* OtherActor)
 				//set the largest exit velocity
 				LargestExitVelocity = OtherBallExitVelocity;
 			}
+		}
+
+		//default value for the max relative speed gain
+		float MaxRelativeSpeedGain = -1;
+
+		//check if we have a valid max relative speed gain curve
+		if (MaxRelativeSpeedGainCurve->IsValidLowLevelFast())
+		{
+			//get the max relative speed gain
+			MaxRelativeSpeedGain = MaxRelativeSpeedGainCurve->GetFloatValue(GetBallVelocity().Size() / GetWorld()->GetDefaultPhysicsVolume()->TerminalVelocity);
 		}
 
 		//check if our max relative speed gain is greater than 0

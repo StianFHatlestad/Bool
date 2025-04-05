@@ -13,6 +13,10 @@ class APhysicsSolverBlueprintBase : public AActor
 	GENERATED_BODY()
 public:
 
+	//the amount of wiggle room for directionality when filtering collisions
+	UPROPERTY(EditAnywhere)
+	float BallColDetectionDirThreshold = -0.3;
+
 	//constructor(s)
 	APhysicsSolverBlueprintBase();
 
@@ -58,8 +62,8 @@ public:
 
 	//sets the exit direction of the other ball after a collision with another ball
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
-	FVector OtherBallCollisionSetExitDirection(const TArray<ABallActor*>& OtherBalls, ABallActor* UnModifiedBall, ABallActor* InitialBall, const FHitResult& Hit);
-	FVector OtherBallCollisionSetExitDirection_Implementation(const TArray<ABallActor*>& OtherBalls, ABallActor* UnModifiedBall, ABallActor* InitialBall, const FHitResult& Hit);
+	FVector OtherBallCollisionSetExitDirection(const TArray<ABallActor*>& OtherBalls, ABallActor* UnModifiedBall, ABallActor* InitialBall, FVector InitialBallOutDirection, const FHitResult& Hit);
+	FVector OtherBallCollisionSetExitDirection_Implementation(const TArray<ABallActor*>& OtherBalls, ABallActor* UnModifiedBall, ABallActor* InitialBall, FVector InitialBallOutDirection, const FHitResult& Hit);
 
 	//sets the magnitude of the velocity of the other ball after a collision with another ball
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
@@ -98,5 +102,12 @@ public:
 	//function to draw a debug arrow
 	UFUNCTION(BlueprintCallable, DisplayName = "Draw Debug Directional Arrow")
 	void ThisDrawDebugDirectionalArrow(AActor* WorldContextObject, const FVector& Start, const FVector& End, float Length, const FColor& Colour, bool PersistentLines, float LifeTime, int32 DepthPriority, float Thickness);
+	
+	//function to add to a balls rotation
+	UFUNCTION(BlueprintCallable)
+	void AddToBallRotation(ABallActor* InBall, FRotator InRot);
 
+	//function to add to a balls angular velocity
+	UFUNCTION(BlueprintCallable)
+	void AddToBallAngularVelocity(ABallActor* InBall, FRotator InRot);
 };

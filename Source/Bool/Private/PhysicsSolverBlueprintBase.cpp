@@ -47,7 +47,7 @@ float APhysicsSolverBlueprintBase::BallCollisionSetAngularExitSpeed_Implementati
 	return 1;
 }
 
-FVector APhysicsSolverBlueprintBase::OtherBallCollisionSetExitDirection_Implementation(const TArray<ABallActor*>& OtherBalls, ABallActor* UnModifiedBall, ABallActor* InitialBall, const FHitResult& Hit)
+FVector APhysicsSolverBlueprintBase::OtherBallCollisionSetExitDirection_Implementation(const TArray<ABallActor*>& OtherBalls, ABallActor* UnModifiedBall, ABallActor* InitialBall, FVector InitialBallOutDirection, const FHitResult& Hit)
 {
 	return FVector::ZeroVector;
 }
@@ -79,8 +79,13 @@ void APhysicsSolverBlueprintBase::UpdateBallAngularVelocity_Implementation(ABall
 
 void APhysicsSolverBlueprintBase::PerformMovement_Implementation(ABallActor* BallActor, float DeltaTime)
 {
+	//rotation workaround to avoid gimbal lock from https://forums.unrealengine.com/t/how-can-i-rotate-a-pawn-a-full-360-degrees/281886/7
+	FTransform orgRot(FRotationMatrix::MakeFromZX(BallActor->SphereComponent->GetUpVector(), BallActor->SphereComponent->GetForwardVector()).ToQuat());
+    FQuat addInRot = (BallActor->GetBallAngularVelocity() * DeltaTime).Quaternion();
+    orgRot.SetRotation(addInRot * orgRot.GetRotation());
+
 	//move the component
-	BallActor->SphereComponent->MoveComponent(BallActor->GetBallVelocity() * DeltaTime, BallActor->SphereComponent->GetComponentRotation() + BallActor->GetBallAngularVelocity() * DeltaTime, true);
+	BallActor->SphereComponent->MoveComponent(BallActor->GetBallVelocity() * DeltaTime, orgRot.Rotator(), true);
 }
 
 void APhysicsSolverBlueprintBase::ThisDrawDebugSphere(AActor* WorldContextObject, const FVector& Location, float Radius, int32 Segments, const FColor& Colour, bool PersistentLines, float LifeTime)
@@ -91,4 +96,24 @@ void APhysicsSolverBlueprintBase::ThisDrawDebugSphere(AActor* WorldContextObject
 void APhysicsSolverBlueprintBase::ThisDrawDebugDirectionalArrow(AActor* WorldContextObject, const FVector& Start, const FVector& End, float Length, const FColor& Colour, bool PersistentLines, float LifeTime, int32 DepthPriority, float Thickness)
 {
 	DrawDebugDirectionalArrow(WorldContextObject->GetWorld(), Start, End, Length, Colour, PersistentLines, LifeTime, DepthPriority, Thickness);
+}
+
+void APhysicsSolverBlueprintBase::AddToBallRotation(ABallActor* InBall, FRotator InRot)
+{
+	//rotation workaround to avoid gimbal lock from https://forums.unrealengine.com/t/how-can-i-rotate-a-pawn-a-full-360-degrees/281886/7
+	FTransform orgRot(FRotationMatrix::MakeFromZX(InBall->SphereComponent->GetUpVector(), InBall->SphereComponent->GetForwardVector()).ToQuat());
+    orgRot.SetRotation(InRot.Quaternion() * orgRot.GetRotation());
+
+	//set the rotation
+	InBall->SphereComponent->SetWorldRotation(orgRot.Rotator());
+}
+
+void APhysicsSolverBlueprintBase::AddToBallAngularVelocity(ABallActor* InBall, FRotator InRot)
+{
+	//rotation workaround to avoid gimbal lock from https://forums.unrealengine.com/t/how-can-i-rotate-a-pawn-a-full-360-degrees/281886/7
+	FTransform orgRot(FRotationMatrix::MakeFromZX(FVector::CrossProduct(InBall->AngularVelocity.Vector(), FVector(1,0,0)).GetSafeNormal(), InBall->AngularVelocity.Vector()).ToQuat());
+    orgRot.SetRotation(InRot.Quaternion() * orgRot.GetRotation());
+
+	//set the rotation
+	InBall->AngularVelocity = orgRot.Rotator();
 }
