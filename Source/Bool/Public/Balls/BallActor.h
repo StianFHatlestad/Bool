@@ -236,9 +236,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics|Collision")
 	bool bOnlyProcessHighestSpeedCollision = false;
 
-	//the maximum relative speed gain from a collision between 2 balls (percentage)
+	////the maximum relative speed gain from a collision between 2 balls (percentage)
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics|Collision")
+	//float MaxRelativeSpeedGain = -1;
+
+	//the float curve for max relative speed gain
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics|Collision")
-	float MaxRelativeSpeedGain = -1;
+	UCurveFloat* MaxRelativeSpeedGainCurve = nullptr;
 
 	////the first frictional constant for ball to ball collisions
 	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics|Collision")

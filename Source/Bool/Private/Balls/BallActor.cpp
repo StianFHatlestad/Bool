@@ -10,6 +10,7 @@
 #include "Bool/GoalActor.h"
 #include "Components/SphereComponent.h"
 #include "Core/PlayerPawn.h"
+#include "GameFramework/PhysicsVolume.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Math/MathFwd.h"
@@ -926,6 +927,16 @@ bool ABallActor::ProcessHit(const FHitResult& HitResult, AActor* OtherActor)
 				//set the largest exit velocity
 				LargestExitVelocity = OtherBallExitVelocity;
 			}
+		}
+
+		//default value for the max relative speed gain
+		float MaxRelativeSpeedGain = -1;
+
+		//check if we have a valid max relative speed gain curve
+		if (MaxRelativeSpeedGainCurve->IsValidLowLevelFast())
+		{
+			//get the max relative speed gain
+			MaxRelativeSpeedGain = MaxRelativeSpeedGainCurve->GetFloatValue(GetBallVelocity().Size() / GetWorld()->GetDefaultPhysicsVolume()->TerminalVelocity);
 		}
 
 		//check if our max relative speed gain is greater than 0
