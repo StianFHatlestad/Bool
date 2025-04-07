@@ -6,7 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "BallActor.generated.h"
 
-class APhysicsSolverBlueprintBase;
+class UPhysicsSolverBlueprintBase;
 class ABallActor;
 class UBallUpgradeDataAsset;
 
@@ -132,9 +132,13 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	class APlayerPawn* PlayerPawn = nullptr;
 
+	//the physics solver class to use for the ball
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BoolData|Physics")
+	TSubclassOf<UPhysicsSolverBlueprintBase> PhysicsSolverClass;
+
 	//the current physics solver of the ball
 	UPROPERTY(BlueprintReadOnly, Category = "BoolData|Physics")
-	TObjectPtr<APhysicsSolverBlueprintBase> PhysicsSolver;
+	TObjectPtr<UPhysicsSolverBlueprintBase> PhysicsSolver;
 
 	//the current turn data for the ball
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BoolData|Turns")

@@ -8,7 +8,7 @@
  * Class for getting physics data in a highly customizable way.
  */
 UCLASS(Blueprintable)
-class APhysicsSolverBlueprintBase : public AActor
+class UPhysicsSolverBlueprintBase : public UObject
 {
 	GENERATED_BODY()
 public:
@@ -18,7 +18,7 @@ public:
 	float BallColDetectionDirThreshold = -0.3;
 
 	//constructor(s)
-	APhysicsSolverBlueprintBase();
+	UPhysicsSolverBlueprintBase();
 
 	//sets the exit direction of a ball after a collision with a wall
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
@@ -110,4 +110,8 @@ public:
 	//function to add to a balls angular velocity
 	UFUNCTION(BlueprintCallable)
 	void AddToBallAngularVelocity(ABallActor* InBall, FRotator InRot);
+
+	//blueprint helper function for updating rotation
+	UFUNCTION(BlueprintCallable)
+	FRotator RotationHelper(ABallActor* InBall, FVector LastBallLocation, UCurveFloat* XCurve, UCurveFloat* YCurve) const;
 };
