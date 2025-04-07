@@ -189,14 +189,11 @@ void ABallActor::BeginPlay()
 	//set our start location
 	StartLocation = GetActorLocation();
 
-	//get the physics solver
-	AActor* LocPhysSolver = UGameplayStatics::GetActorOfClass(this, APhysicsSolverBlueprintBase::StaticClass());
-
 	//check if the physics solver is valid
-	if (LocPhysSolver->IsValidLowLevelFast())
+	if (PhysicsSolverClass->IsValidLowLevelFast())
 	{
 		//set the physics solver
-		PhysicsSolver = Cast<APhysicsSolverBlueprintBase>(LocPhysSolver);
+		PhysicsSolver = PhysicsSolverClass->GetDefaultObject<UPhysicsSolverBlueprintBase>();
 	}
 
 	//get the game instance
