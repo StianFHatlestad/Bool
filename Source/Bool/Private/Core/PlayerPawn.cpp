@@ -181,7 +181,6 @@ void APlayerPawn::ShootCueBallAtPosition(FVector NewVelocity, const FName BoneNa
 	//add the impulse to the cue ball
 	CueBall->SetBallVelocity(LocNewVelocity);
 	CueBall->SetBallAngularVelocity(OutPutAngularVelocity);
-	
 }
 
 void APlayerPawn::SetCueBallHitLocation(const FVector2D HitLocation)
@@ -353,11 +352,6 @@ FVector APlayerPawn::GetMouseWorldPosition() const
 	if (CueBall->IsValidLowLevelFast())
 	{
 		TrueWorldLocation.Z = CueBall->GetActorLocation().Z;
-	}
-	else
-	{
-		//print debug message
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("no valid cue ball"));
 	}
 
 	//return the world location
