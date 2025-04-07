@@ -189,6 +189,9 @@ void ABallActor::BeginPlay()
 	//set our start location
 	StartLocation = GetActorLocation();
 
+	//set our start rotation
+	StartRotation = GetActorRotation();
+
 	//check if the physics solver is valid
 	if (PhysicsSolverClass->IsValidLowLevelFast())
 	{
@@ -862,6 +865,13 @@ bool ABallActor::ProcessHit(const FHitResult& HitResult, AActor* OtherActor)
 
 		//check if the other ball actor has no valid old velocities
 		if (!OtherBallActor->OldVelocities.Num())
+		{
+			//return early to prevent further execution
+			return false;
+		}
+
+		//check if overlapping balls is empty
+		if (OverlappingBalls.IsEmpty())
 		{
 			//return early to prevent further execution
 			return false;

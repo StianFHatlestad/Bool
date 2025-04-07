@@ -264,6 +264,10 @@ public:
 	UPROPERTY()
 	FVector StartLocation = FVector::ZeroVector;
 
+	//our starting rotation
+	UPROPERTY(BlueprintReadWrite)
+	FRotator StartRotation;
+
 	//the position of the box we use to check if we're outside the table
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics")
 	FVector BoxPosition = FVector::ZeroVector;
