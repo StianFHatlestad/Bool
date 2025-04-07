@@ -95,7 +95,7 @@ public:
 	FVector AimLocation = FVector::ZeroVector;
 
 	//storage for all of the balls in the level
-	UPROPERTY()
+	UPROPERTY(BlueprintReadWrite)
 	TArray<ABallActor*> LevelBallActors;
 
 	//constructor(s)
