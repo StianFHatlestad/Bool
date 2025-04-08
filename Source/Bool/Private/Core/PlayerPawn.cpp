@@ -89,6 +89,26 @@ void APlayerPawn::Tick(const float DeltaTime)
 	//call the parent implementation
 	Super::Tick(DeltaTime);
 
+	//temporary storage for the ball actors in the level
+	TArray<AActor*> LocBallActors;
+
+	//get all the ball actors in the level
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABallActor::StaticClass(), LocBallActors);
+
+	//iterate over the ball actors
+	for (AActor* BallActor : LocBallActors)
+	{
+		//cast the ball actor to a ball actor
+		const TObjectPtr<ABallActor> Ball = Cast<ABallActor>(BallActor);
+
+		//check if the ball is valid
+		if (Ball->IsValidLowLevel())
+		{
+			//add the ball to the level ball actors
+			LevelBallActors.Add(Ball);
+		}
+	}
+
 	//check if the shooting trajectory is locked
 	if (!bLockedShotTrajectory)
 	{
