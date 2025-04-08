@@ -624,20 +624,12 @@ bool ABallActor::ProcessHit(const FHitResult& HitResult, AActor* OtherActor)
 		//iterate over the player pawns level ball actors
 		for (ABallActor* BallActor : PlayerPawn->LevelBallActors)
 		{
-			//check if the ball actor is not valid
-			if (!BallActor->IsValidLowLevelFast())
-			{
-				//skip this iteration
-				continue;
-			}
-
 			//check if the ball actor is ourselves
 			if (BallActor == this)
 			{
 				//skip this iteration
 				continue;
 			}
-
 
 			//check if the distance between the balls is greater than the other balls radius + the size of the detection sphere
 			if ((BallActor->GetActorLocation() - GetActorLocation()).Size() > BallActor->SphereComponent->GetScaledSphereRadius() + BallDetectionComponent->GetScaledSphereRadius())
@@ -733,8 +725,8 @@ bool ABallActor::ProcessHit(const FHitResult& HitResult, AActor* OtherActor)
 		//check if overlapping balls is empty
 		if (OverlappingBalls.IsEmpty())
 		{
-			//return early to prevent further execution
-			return false;
+			//add the other ball actor to the overlapping balls
+			OverlappingBalls.Add(OtherBallActor);
 		}
 
 		//get the exit direction
