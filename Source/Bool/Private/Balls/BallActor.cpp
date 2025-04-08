@@ -848,8 +848,8 @@ bool ABallActor::ProcessHit(const FHitResult& HitResult, AActor* OtherActor)
 				//the parallell direction to -ClusterBallDirection
 				const FVector ParallelDirection = FVector::CrossProduct(-ClusterBallDirection, FVector::UpVector);
 
-				//draw a debug arrow in the parallel direction
-				DrawDebugDirectionalArrow(GetWorld(), ClusterBall->GetActorLocation(), ClusterBall->GetActorLocation() + ParallelDirection * SphereComponent->GetScaledSphereRadius() * 2, 100, FColor::Red, false, 99, 0, 1);
+				////draw a debug arrow in the parallel direction
+				//DrawDebugDirectionalArrow(GetWorld(), ClusterBall->GetActorLocation(), ClusterBall->GetActorLocation() + ParallelDirection * SphereComponent->GetScaledSphereRadius() * 2, 100, FColor::Red, false, 99, 0, 1);
 
 				//get the first float curve value
 				float CurveValue1 = PhysicsSolver->ClusterSpeedCurve1->GetFloatValue(DotProduct);
