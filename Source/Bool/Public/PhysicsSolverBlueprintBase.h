@@ -2,6 +2,7 @@
 #include "CoreMinimal.h"
 #include "UObject/ObjectMacros.h"
 #include "Balls/BallActor.h"
+#include "Core/PlayerPawn.h"
 #include "PhysicsSolverBlueprintBase.generated.h"
 
 /**
@@ -13,9 +14,17 @@ class UPhysicsSolverBlueprintBase : public UObject
 	GENERATED_BODY()
 public:
 
-	//the amount of wiggle room for directionality when filtering collisions
-	UPROPERTY(EditAnywhere)
-	float BallColDetectionDirThreshold = -0.3;
+	//the float curve for cluster speed
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UCurveFloat* ClusterSpeedCurve1;
+
+	//the second float curve for cluster speed
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UCurveFloat* ClusterSpeedCurve2;
+
+	//the third float curve for cluster speed
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UCurveFloat* ClusterSpeedCurve3;
 
 	//constructor(s)
 	UPhysicsSolverBlueprintBase();
@@ -114,4 +123,14 @@ public:
 	//blueprint helper function for updating rotation
 	UFUNCTION(BlueprintCallable)
 	FRotator RotationHelper(ABallActor* InBall, FVector LastBallLocation, UCurveFloat* XCurve, UCurveFloat* YCurve) const;
+
+	//recursive function to get all balls in a cluster
+	TArray<ABallActor*> GetAllBallsInCluster(const TArray<ABallActor*>& Balls, ABallActor* BallToCheck, TArray<ABallActor*>& BallsToIgnore, int32 Depth, int32 MaxDepth) const;
+
+	//blueprint shortcut for getting all balls in a cluster with only the ball to check
+	UFUNCTION(BlueprintCallable)
+	TArray<ABallActor*> GetAllBallsInCluster(ABallActor* BallToCheck, TArray<ABallActor*> BallsToIgnore, int32 MaxDepth = 1) const
+	{
+		return GetAllBallsInCluster(BallToCheck->PlayerPawn->LevelBallActors, BallToCheck, BallsToIgnore, 0, MaxDepth);
+	}
 };
