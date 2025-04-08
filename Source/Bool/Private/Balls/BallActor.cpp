@@ -15,146 +15,6 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Math/MathFwd.h"
 
-//FMultiBodyCollisionGraph FMultiBodyCollisionGraph::BuildMultiBodyCollisionGraph(TArray<ABallActor*>& InBalls, UPhysicsDataBlueprint* PhysicsDataBP)
-//{
-//	//check if the array is empty or the physics data blueprint is invalid
-//	if (InBalls.IsEmpty() || !PhysicsDataBP->IsValidLowLevelFast())
-//	{
-//		//return an empty graph
-//		return FMultiBodyCollisionGraph();
-//	}
-//
-//	//storage for the array of nodes
-//	TArray<FMultiBodyCollisionGraphNode> LocNodes;
-//
-//	//iterate over the actors
-//	for (ABallActor* BallActor : InBalls)
-//	{
-//		//create a new node
-//		FMultiBodyCollisionGraphNode Node;
-//
-//		//set the ball actor of the node
-//		Node.OurBall = BallActor;
-//
-//		//add the node to the nodes array
-//		LocNodes.Add(Node);
-//	}
-//
-//	//storage for balls that have incoming velocity
-//	TArray<FMultiBodyCollisionGraphNode> IncomingVelocityBalls;
-//
-//	//storage for the balls that do not have incoming velocity
-//	TArray<FMultiBodyCollisionGraphNode> NoIncomingVelocityBalls;
-//
-//	//iterate over the nodes
-//	for (FMultiBodyCollisionGraphNode& Node : LocNodes)
-//	{
-//		//get the ball actor
-//		ABallActor* BallActor = Node.OurBall.Get();
-//
-//		//check if the ball actor's velocity is nearly zero
-//		if (BallActor->GetBallVelocity().IsNearlyZero())
-//		{
-//			//add it to the no incoming velocity balls
-//			NoIncomingVelocityBalls.Add(Node);
-//
-//			//continue to the next iteration of the loop
-//			continue;
-//		}
-//
-//		//add it to the incoming velocity balls
-//		IncomingVelocityBalls.Add(Node);
-//	}
-//
-//	//create a new graph
-//	FMultiBodyCollisionGraph Graph;
-//
-//	//set the nodes of the graph
-//	Graph.Nodes = LocNodes;
-//
-//	//set the physics data blueprint of the graph
-//	Graph.PhysicsDataBlueprint = PhysicsDataBP;
-//
-//	//storage for the maps of collision directions
-//	TArray<TMap<ABallActor*, FVector>> CollisionDirections;
-//
-//	//iterate over the incoming velocity balls
-//	for (FMultiBodyCollisionGraphNode& IncomingVelocityBall : IncomingVelocityBalls)
-//	{
-//		//storage for the collision directions
-//		TMap<ABallActor*, FVector> CollisionDirectionsMap;
-//
-//		//get the collision directions from the ball
-//		Graph.GetCollisionDirectionsRecursive(CollisionDirectionsMap, IncomingVelocityBall.OurBall.Get(), IncomingVelocityBall.OurBall->GetBallVelocity().GetSafeNormal());
-//
-//		//add the collision directions to the array
-//		CollisionDirections.Add(CollisionDirectionsMap);
-//	}
-//
-//	//return the graph
-//	return Graph;
-//}
-//
-//void FMultiBodyCollisionGraph::GetCollisionDirectionsRecursive(TMap<ABallActor*, FVector>& OutMap, ABallActor* InBallActor, FVector ImpartedVelDirection, const int Iterations)
-//{
-//	//check if we've reached the maximum number of iterations
-//	if (Iterations >= 150)
-//	{
-//		//return early to prevent further execution
-//		return;
-//	}
-//
-//	//check if the ball actor is already in the out actors array
-//	if (OutMap.Contains(InBallActor))
-//	{
-//		//return early to prevent further execution
-//		return;
-//	}
-//
-//	//iterate over the overlapping actors
-//	for (AActor* OverlappingActor : InBallActor->OverlappingActors)
-//	{
-//		//check if the overlapping actor is not a ball actor
-//		if (!OverlappingActor->IsA(ABallActor::StaticClass()))
-//		{
-//			//continue to the next iteration of the loop
-//			continue;
-//		}
-//
-//		//get the other ball actor
-//		ABallActor* OverlappingBallActor = Cast<ABallActor>(OverlappingActor);
-//
-//		//check if the actor is already in the out actors array or is a goal actor
-//		if (OutMap.Contains(OverlappingBallActor))
-//		{
-//			//continue to the next iteration of the loop
-//			continue;
-//		}
-//
-//		//get the distance the overlapping actor is from an infinite line originating from the ball actor with the direction of the imparted velocity
-//		FVector ClosestPoint = UKismetMathLibrary::FindClosestPointOnLine(OverlappingBallActor->GetActorLocation(), InBallActor->GetActorLocation(), ImpartedVelDirection);
-//
-//		//check if the closest point is greater than the sum of the radii of the 2 balls
-//		if (FVector::Dist(ClosestPoint, OverlappingBallActor->GetActorLocation()) > InBallActor->SphereComponent->GetScaledSphereRadius() + OverlappingBallActor->SphereComponent->GetScaledSphereRadius())
-//		{
-//			//continue to the next iteration of the loop
-//			continue;
-//		}
-//
-//		//get the hit normal
-//		const FVector HitNormal = (OverlappingBallActor->GetActorLocation() - InBallActor->GetActorLocation()).GetSafeNormal();
-//
-//		//call the physics data blueprint to get the exit direction
-//		const FVector ExitDirection = PhysicsDataBlueprint->MulitBallCollisionExitDir(InBallActor, OverlappingBallActor, ImpartedVelDirection, ClosestPoint, HitNormal);
-//
-//		//recurse
-//		GetCollisionDirectionsRecursive(OutMap, OverlappingBallActor, ExitDirection, Iterations + 1);
-//	}
-//
-//	//add the ball actor
-//	OutMap.Add({InBallActor, ImpartedVelDirection});
-//}
-
 ABallActor::ABallActor()
 {
 	//enable ticking
@@ -188,6 +48,9 @@ void ABallActor::BeginPlay()
 
 	//set our start location
 	StartLocation = GetActorLocation();
+
+	//set our start rotation
+	StartRotation = GetActorRotation();
 
 	//check if the physics solver is valid
 	if (PhysicsSolverClass->IsValidLowLevelFast())
@@ -761,20 +624,12 @@ bool ABallActor::ProcessHit(const FHitResult& HitResult, AActor* OtherActor)
 		//iterate over the player pawns level ball actors
 		for (ABallActor* BallActor : PlayerPawn->LevelBallActors)
 		{
-			//check if the ball actor is not valid
-			if (!BallActor->IsValidLowLevelFast())
-			{
-				//skip this iteration
-				continue;
-			}
-
 			//check if the ball actor is ourselves
 			if (BallActor == this)
 			{
 				//skip this iteration
 				continue;
 			}
-
 
 			//check if the distance between the balls is greater than the other balls radius + the size of the detection sphere
 			if ((BallActor->GetActorLocation() - GetActorLocation()).Size() > BallActor->SphereComponent->GetScaledSphereRadius() + BallDetectionComponent->GetScaledSphereRadius())
@@ -867,6 +722,13 @@ bool ABallActor::ProcessHit(const FHitResult& HitResult, AActor* OtherActor)
 			return false;
 		}
 
+		//check if overlapping balls is empty
+		if (OverlappingBalls.IsEmpty())
+		{
+			//add the other ball actor to the overlapping balls
+			OverlappingBalls.Add(OtherBallActor);
+		}
+
 		//get the exit direction
 		const FVector ExitDirection = PhysicsSolver->BallCollisionSetExitDirection(this, OverlappingBalls, HitResult);
 
@@ -894,40 +756,152 @@ bool ABallActor::ProcessHit(const FHitResult& HitResult, AActor* OtherActor)
 		//storage for the largest exit velocity
 		FVector LargestExitVelocity = FVector::Zero();
 
-		//iterate over the overlapping balls
-		for (int i = 0; i < OverlappingBalls.Num(); i++)
-		{
-			//get the exit direction
-			const FVector OtherBallExitDirection = PhysicsSolver->OtherBallCollisionSetExitDirection(OverlappingBalls[i]->OverlappingBalls, OverlappingBalls[i], this, ExitDirection, HitResult);
+		//the array to use when setting the values after the collisions
+		TArray<ABallActor*> BallsToSetValues = OverlappingBalls;
 
-			//get the exit speed
-			const float OtherBallExitSpeed = PhysicsSolver->OtherBallCollisionSetExitSpeed(OverlappingBalls[i]->OverlappingBalls, OverlappingBalls[i], this, ExitDirection, HitResult);
+		////check if the number of overlapping balls is greater than or equal to 2
+		//if (OverlappingBalls.Num() >= 2)
+		//{
+		//	//check if we don't have a valid cluster speed curve
+		//	if (!PhysicsSolver->ClusterSpeedCurve1->IsValidLowLevelFast() || !PhysicsSolver->ClusterSpeedCurve2->IsValidLowLevelFast() || !PhysicsSolver->ClusterSpeedCurve3->IsValidLowLevelFast())
+		//	{
+		//		//return early to prevent further execution
+		//		return false;
+		//	}
 
-			//get the exit velocity for the other ball
-			FVector OtherBallExitVelocity = OtherBallExitDirection * OtherBallExitSpeed;
+		//	//storage for the ball actors in the cluster
+		//	TArray<ABallActor*> BallActorsInCluster;
 
-			//get the other balls angular exit direction
-			const FRotator OtherBallAngularExitDirection = PhysicsSolver->OtherBallCollisionSetAngularExitDirection(OverlappingBalls[i]->OverlappingBalls, OverlappingBalls[i], this, HitResult);
+		//	//storage for the balls to check for collisions
+		//	TArray<ABallActor*> BallsToCheckForCollisions = OverlappingBalls;
 
-			//get the other balls angular exit speed
-			const float OtherBallAngularExitSpeed = PhysicsSolver->OtherBallCollisionSetAngularExitSpeed(OverlappingBalls[i]->OverlappingBalls, OverlappingBalls[i], this, OtherBallAngularExitDirection, HitResult);
+		//	//storage for the combined position of the balls in the cluster
+		//	FVector CombinedPos = FVector::Zero();
 
-			//get the other balls angular exit velocity
-			const FRotator OtherBallAngularExitVelocity = OtherBallAngularExitDirection * OtherBallAngularExitSpeed;
+		//	//iterate over the overlapping balls
+		//	while (BallsToCheckForCollisions.Num() > 0)
+		//	{
+		//		//get the first ball in the array
+		//		const TObjectPtr<ABallActor> BallActor = BallsToCheckForCollisions[0];
 
-			//add the other balls exit velocity to the array
-			OtherBallExitVelocities.Add(OtherBallExitVelocity);
+		//		//remove the ball from the array
+		//		BallsToCheckForCollisions.RemoveAt(0);
 
-			//add the other balls angular exit velocity to the array
-			OtherBallAngularExitVelocities.Add(OtherBallAngularExitVelocity);
+		//		//check if the ball is not valid
+		//		if (!BallActor->IsValidLowLevelFast())
+		//		{
+		//			//skip this iteration
+		//			continue;
+		//		}
 
-			//check if the other balls exit velocity is greater than the largest exit velocity
-			if (OtherBallExitVelocity.Size() > LargestExitVelocity.Size())
+		//		//check if the ball is ourselves
+		//		if (BallActor == this)
+		//		{
+		//			//skip this iteration
+		//			continue;
+		//		}
+
+		//		//add the ball to the cluster
+		//		BallActorsInCluster.AddUnique(BallActor);
+
+		//		//add the ball's overlapping balls to the array of balls to check for collisions
+		//		for (ABallActor* OverlappingBall : BallActor->OverlappingBalls)
+		//		{
+		//			//check if the ball is not already in the array or in the array of balls in the cluster
+		//			if (!BallsToCheckForCollisions.Contains(OverlappingBall) && !BallActorsInCluster.Contains(OverlappingBall))
+		//			{
+		//				//add the ball to the array
+		//				BallsToCheckForCollisions.AddUnique(OverlappingBall);
+
+		//				//add the position of the ball to the combined position
+		//				CombinedPos += OverlappingBall->GetActorLocation();
+		//			}
+		//		}
+		//	}
+
+		//	//set the balls to set values to the balls in the cluster
+		//	BallsToSetValues = BallActorsInCluster;
+
+		//	//get the average position of the cluster
+		//	FVector ClusterPos = CombinedPos / BallActorsInCluster.Num();
+
+		//	//get our velocity direction
+		//	FVector OurVelocity = GetBallVelocity();
+
+		//	//iterate over the balls in the cluster
+		//	for (ABallActor* ClusterBall : BallActorsInCluster)
+		//	{
+		//		//get the direction between the cluster center and this ball
+		//		const FVector ClusterBallDirection = (ClusterPos - ClusterBall->GetActorLocation()).GetSafeNormal();
+
+		//		//get the dot product between the cluster center and our velocity direction
+		//		const float DotProduct = FVector::DotProduct(ClusterBallDirection, -HitResult.ImpactNormal);
+
+		//		//the parallell direction to -ClusterBallDirection
+		//		const FVector ParallelDirection = FVector::CrossProduct(-ClusterBallDirection, FVector::UpVector);
+
+		//		////draw a debug arrow in the parallel direction
+		//		//DrawDebugDirectionalArrow(GetWorld(), ClusterBall->GetActorLocation(), ClusterBall->GetActorLocation() + ParallelDirection * SphereComponent->GetScaledSphereRadius() * 2, 100, FColor::Red, false, 99, 0, 1);
+
+		//		//get the first float curve value
+		//		float CurveValue1 = PhysicsSolver->ClusterSpeedCurve1->GetFloatValue(DotProduct);
+
+		//		//get the second float curve value
+		//		float CurveValue2 = PhysicsSolver->ClusterSpeedCurve2->GetFloatValue(FVector::Dist(ClusterPos, ClusterBall->GetActorLocation()) / OurVelocity.Length());
+
+		//		//get the third float curve value
+		//		float CurveValue3 = PhysicsSolver->ClusterSpeedCurve3->GetFloatValue(DotProduct);
+
+		//		//the out vector for velocity
+		//		FVector OutVel = (-ClusterBallDirection * CurveValue3 + ParallelDirection * (1 - CurveValue3)) * CurveValue1 * OurVelocity.Length() * CurveValue2 / 2;
+
+		//		//add the exit direction to the array
+		//		OtherBallExitVelocities.Add(FVector(OutVel.X, OutVel.Y, 0));
+
+		//		//add the angular exit direction to the array
+		//		OtherBallAngularExitVelocities.Add(ClusterBall->AngularVelocity);
+
+		//		//reset the rotation of the cluster ball
+		//		ClusterBall->SphereComponent->SetWorldRotation(ClusterBall->StartRotation);
+		//	}
+		//}
+		//else
+		//{
+			//iterate over the overlapping balls
+			for (int i = 0; i < BallsToSetValues.Num(); i++)
 			{
-				//set the largest exit velocity
-				LargestExitVelocity = OtherBallExitVelocity;
+				//get the exit direction
+				const FVector OtherBallExitDirection = PhysicsSolver->OtherBallCollisionSetExitDirection(OverlappingBalls[i]->OverlappingBalls, OverlappingBalls[i], this, ExitDirection, HitResult);
+
+				//get the exit speed
+				const float OtherBallExitSpeed = PhysicsSolver->OtherBallCollisionSetExitSpeed(OverlappingBalls[i]->OverlappingBalls, OverlappingBalls[i], this, ExitDirection, HitResult);
+
+				//get the exit velocity for the other ball
+				FVector OtherBallExitVelocity = OtherBallExitDirection * OtherBallExitSpeed;
+
+				//get the other balls angular exit direction
+				const FRotator OtherBallAngularExitDirection = PhysicsSolver->OtherBallCollisionSetAngularExitDirection(OverlappingBalls[i]->OverlappingBalls, OverlappingBalls[i], this, HitResult);
+
+				//get the other balls angular exit speed
+				const float OtherBallAngularExitSpeed = PhysicsSolver->OtherBallCollisionSetAngularExitSpeed(OverlappingBalls[i]->OverlappingBalls, OverlappingBalls[i], this, OtherBallAngularExitDirection, HitResult);
+
+				//get the other balls angular exit velocity
+				const FRotator OtherBallAngularExitVelocity = OtherBallAngularExitDirection * OtherBallAngularExitSpeed;
+
+				//add the other balls exit velocity to the array
+				OtherBallExitVelocities.Add(OtherBallExitVelocity);
+
+				//add the other balls angular exit velocity to the array
+				OtherBallAngularExitVelocities.Add(OtherBallAngularExitVelocity);
+
+				//check if the other balls exit velocity is greater than the largest exit velocity
+				if (OtherBallExitVelocity.Size() > LargestExitVelocity.Size())
+				{
+					//set the largest exit velocity
+					LargestExitVelocity = OtherBallExitVelocity;
+				}
 			}
-		}
+		//}
 
 		//default value for the max relative speed gain
 		float MaxRelativeSpeedGain = -1;
@@ -965,13 +939,13 @@ bool ABallActor::ProcessHit(const FHitResult& HitResult, AActor* OtherActor)
 		SetBallAngularVelocity(AngularExitVelocity);
 
 		//iterate over the overlapping balls
-		for (int i = 0; i < OverlappingBalls.Num(); i++)
+		for (int i = 0; i < BallsToSetValues.Num(); i++)
 		{
 			//set the other balls new velocity
-			OverlappingBalls[i]->SetBallVelocity(OtherBallExitVelocities[i]);
+			BallsToSetValues[i]->SetBallVelocity(OtherBallExitVelocities[i]);
 
 			//set the other balls new angular velocity
-			OverlappingBalls[i]->SetBallAngularVelocity(OtherBallAngularExitVelocities[i]);
+			BallsToSetValues[i]->SetBallAngularVelocity(OtherBallAngularExitVelocities[i]);
 		}
 
 		//return early to prevent further execution

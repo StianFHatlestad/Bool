@@ -10,54 +10,6 @@ class UPhysicsSolverBlueprintBase;
 class ABallActor;
 class UBallUpgradeDataAsset;
 
-////node struct for storing the information for resolving a multi-body collision
-//USTRUCT(BlueprintType)
-//struct FMultiBodyCollisionGraphNode
-//{
-//	GENERATED_BODY();
-//
-//	//our ball actor
-//	UPROPERTY(BlueprintReadOnly)
-//	TObjectPtr<ABallActor> OurBall = nullptr;
-//
-//	//whether or not we've already imparted our velocity to the rest of the graph
-//	UPROPERTY(BlueprintReadOnly)
-//	bool bImpartedVelocity = false;
-//
-//	//whether or not we're hitting a wall with the current direct velocity angle
-//	UPROPERTY(BlueprintReadOnly)
-//	bool bHittingWall = false;
-//
-//	//our current pending velocity angle directly from incoming collisions
-//	UPROPERTY(BlueprintReadOnly)
-//	FVector DirectVelocityAngle = FVector::ZeroVector;
-//
-//	//our current pending velocity angle directly from incoming collisions
-//	UPROPERTY(BlueprintReadOnly)
-//	FVector ReturnVelocityAngle = FVector::ZeroVector;
-//};
-//
-////graph struct for storing the information for resolving a multi-body collision
-//USTRUCT(BlueprintType)
-//struct FMultiBodyCollisionGraph
-//{
-//	GENERATED_BODY();
-//
-//	//our nodes
-//	UPROPERTY(BlueprintReadOnly)
-//	TArray<FMultiBodyCollisionGraphNode> Nodes = {};
-//
-//	//our physics data blueprint
-//	UPROPERTY(BlueprintReadOnly)
-//	TObjectPtr<UPhysicsDataBlueprint> PhysicsDataBlueprint = nullptr;
-//
-//	//static function to build a multi-body collision graph from an array of actors
-//	static FMultiBodyCollisionGraph BuildMultiBodyCollisionGraph(TArray<ABallActor*>& InBalls, UPhysicsDataBlueprint* PhysicsDataBP);
-//
-//	//recursive function to get all the actors that are in a multi-body collision with a given ball actor
-//	void GetCollisionDirectionsRecursive(TMap<ABallActor*, FVector>& OutMap, ABallActor* InBallActor, FVector ImpartedVelDirection, int Iterations = 0);
-//};
-
 UENUM(BlueprintType)
 enum EBallPhysicsState
 {
@@ -263,6 +215,10 @@ public:
 	//storage for our start location
 	UPROPERTY()
 	FVector StartLocation = FVector::ZeroVector;
+
+	//our starting rotation
+	UPROPERTY(BlueprintReadWrite)
+	FRotator StartRotation;
 
 	//the position of the box we use to check if we're outside the table
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics")
