@@ -140,3 +140,48 @@ FRotator UPhysicsSolverBlueprintBase::RotationHelper(ABallActor* InBall, const F
 
 	return FRotator(Pitch * InBall->GetBallVelocity().Length(), TotalPitch * InBall->GetBallVelocity().Length(), Roll * InBall->GetBallVelocity().Length());
 }
+
+TArray<ABallActor*> UPhysicsSolverBlueprintBase::GetAllBallsInCluster(const TArray<ABallActor*>& Balls, ABallActor* BallToCheck, TArray<ABallActor*>& BallsToIgnore, int32 Depth, int32 MaxDepth) const
+{
+	//check if the depth is greater than the max depth
+	if (Depth > MaxDepth)
+	{
+		//return empty array
+		return TArray<ABallActor*>();
+	}
+
+	//temporary storage for the balls in the cluster
+	TArray<ABallActor*> BallsInCluster = {};
+
+	//check if the ball to check is not valid
+	if (!BallToCheck->IsValidLowLevel())
+	{
+		//return empty array
+		return BallsInCluster;
+	}
+
+	//check if the ball to check is not in the ignore list
+	if (BallsToIgnore.Contains(BallToCheck))
+	{
+		//return empty array
+		return BallsInCluster;
+	}
+
+	//add the ball to the cluster
+	BallsInCluster.Add(BallToCheck);
+
+	//add the ball to the ignore list
+	BallsToIgnore.Add(BallToCheck);
+
+	//loop through all the balls
+	for (ABallActor* Ball : Balls)
+	{
+		//check if the ball is not the ball to check and is not in the ignore list
+		if (Ball != BallToCheck && !BallsToIgnore.Contains(Ball))
+		{
+			//add the ball to the list of balls in the cluster
+			BallsInCluster.Append(GetAllBallsInCluster(Balls, Ball, BallsToIgnore, Depth + 1, MaxDepth));
+		}
+	}
+	return BallsInCluster;
+}
