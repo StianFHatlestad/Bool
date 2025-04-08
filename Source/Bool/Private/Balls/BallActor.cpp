@@ -759,114 +759,114 @@ bool ABallActor::ProcessHit(const FHitResult& HitResult, AActor* OtherActor)
 		//the array to use when setting the values after the collisions
 		TArray<ABallActor*> BallsToSetValues = OverlappingBalls;
 
-		//check if the number of overlapping balls is greater than or equal to 2
-		if (OverlappingBalls.Num() >= 2)
-		{
-			//check if we don't have a valid cluster speed curve
-			if (!PhysicsSolver->ClusterSpeedCurve1->IsValidLowLevelFast() || !PhysicsSolver->ClusterSpeedCurve2->IsValidLowLevelFast() || !PhysicsSolver->ClusterSpeedCurve3->IsValidLowLevelFast())
-			{
-				//return early to prevent further execution
-				return false;
-			}
+		////check if the number of overlapping balls is greater than or equal to 2
+		//if (OverlappingBalls.Num() >= 2)
+		//{
+		//	//check if we don't have a valid cluster speed curve
+		//	if (!PhysicsSolver->ClusterSpeedCurve1->IsValidLowLevelFast() || !PhysicsSolver->ClusterSpeedCurve2->IsValidLowLevelFast() || !PhysicsSolver->ClusterSpeedCurve3->IsValidLowLevelFast())
+		//	{
+		//		//return early to prevent further execution
+		//		return false;
+		//	}
 
-			//storage for the ball actors in the cluster
-			TArray<ABallActor*> BallActorsInCluster;
+		//	//storage for the ball actors in the cluster
+		//	TArray<ABallActor*> BallActorsInCluster;
 
-			//storage for the balls to check for collisions
-			TArray<ABallActor*> BallsToCheckForCollisions = OverlappingBalls;
+		//	//storage for the balls to check for collisions
+		//	TArray<ABallActor*> BallsToCheckForCollisions = OverlappingBalls;
 
-			//storage for the combined position of the balls in the cluster
-			FVector CombinedPos = FVector::Zero();
+		//	//storage for the combined position of the balls in the cluster
+		//	FVector CombinedPos = FVector::Zero();
 
-			//iterate over the overlapping balls
-			while (BallsToCheckForCollisions.Num() > 0)
-			{
-				//get the first ball in the array
-				const TObjectPtr<ABallActor> BallActor = BallsToCheckForCollisions[0];
+		//	//iterate over the overlapping balls
+		//	while (BallsToCheckForCollisions.Num() > 0)
+		//	{
+		//		//get the first ball in the array
+		//		const TObjectPtr<ABallActor> BallActor = BallsToCheckForCollisions[0];
 
-				//remove the ball from the array
-				BallsToCheckForCollisions.RemoveAt(0);
+		//		//remove the ball from the array
+		//		BallsToCheckForCollisions.RemoveAt(0);
 
-				//check if the ball is not valid
-				if (!BallActor->IsValidLowLevelFast())
-				{
-					//skip this iteration
-					continue;
-				}
+		//		//check if the ball is not valid
+		//		if (!BallActor->IsValidLowLevelFast())
+		//		{
+		//			//skip this iteration
+		//			continue;
+		//		}
 
-				//check if the ball is ourselves
-				if (BallActor == this)
-				{
-					//skip this iteration
-					continue;
-				}
+		//		//check if the ball is ourselves
+		//		if (BallActor == this)
+		//		{
+		//			//skip this iteration
+		//			continue;
+		//		}
 
-				//add the ball to the cluster
-				BallActorsInCluster.AddUnique(BallActor);
+		//		//add the ball to the cluster
+		//		BallActorsInCluster.AddUnique(BallActor);
 
-				//add the ball's overlapping balls to the array of balls to check for collisions
-				for (ABallActor* OverlappingBall : BallActor->OverlappingBalls)
-				{
-					//check if the ball is not already in the array or in the array of balls in the cluster
-					if (!BallsToCheckForCollisions.Contains(OverlappingBall) && !BallActorsInCluster.Contains(OverlappingBall))
-					{
-						//add the ball to the array
-						BallsToCheckForCollisions.AddUnique(OverlappingBall);
+		//		//add the ball's overlapping balls to the array of balls to check for collisions
+		//		for (ABallActor* OverlappingBall : BallActor->OverlappingBalls)
+		//		{
+		//			//check if the ball is not already in the array or in the array of balls in the cluster
+		//			if (!BallsToCheckForCollisions.Contains(OverlappingBall) && !BallActorsInCluster.Contains(OverlappingBall))
+		//			{
+		//				//add the ball to the array
+		//				BallsToCheckForCollisions.AddUnique(OverlappingBall);
 
-						//add the position of the ball to the combined position
-						CombinedPos += OverlappingBall->GetActorLocation();
-					}
-				}
-			}
+		//				//add the position of the ball to the combined position
+		//				CombinedPos += OverlappingBall->GetActorLocation();
+		//			}
+		//		}
+		//	}
 
-			//set the balls to set values to the balls in the cluster
-			BallsToSetValues = BallActorsInCluster;
+		//	//set the balls to set values to the balls in the cluster
+		//	BallsToSetValues = BallActorsInCluster;
 
-			//get the average position of the cluster
-			FVector ClusterPos = CombinedPos / BallActorsInCluster.Num();
+		//	//get the average position of the cluster
+		//	FVector ClusterPos = CombinedPos / BallActorsInCluster.Num();
 
-			//get our velocity direction
-			FVector OurVelocity = GetBallVelocity();
+		//	//get our velocity direction
+		//	FVector OurVelocity = GetBallVelocity();
 
-			//iterate over the balls in the cluster
-			for (ABallActor* ClusterBall : BallActorsInCluster)
-			{
-				//get the direction between the cluster center and this ball
-				const FVector ClusterBallDirection = (ClusterPos - ClusterBall->GetActorLocation()).GetSafeNormal();
+		//	//iterate over the balls in the cluster
+		//	for (ABallActor* ClusterBall : BallActorsInCluster)
+		//	{
+		//		//get the direction between the cluster center and this ball
+		//		const FVector ClusterBallDirection = (ClusterPos - ClusterBall->GetActorLocation()).GetSafeNormal();
 
-				//get the dot product between the cluster center and our velocity direction
-				const float DotProduct = FVector::DotProduct(ClusterBallDirection, -HitResult.ImpactNormal);
+		//		//get the dot product between the cluster center and our velocity direction
+		//		const float DotProduct = FVector::DotProduct(ClusterBallDirection, -HitResult.ImpactNormal);
 
-				//the parallell direction to -ClusterBallDirection
-				const FVector ParallelDirection = FVector::CrossProduct(-ClusterBallDirection, FVector::UpVector);
+		//		//the parallell direction to -ClusterBallDirection
+		//		const FVector ParallelDirection = FVector::CrossProduct(-ClusterBallDirection, FVector::UpVector);
 
-				////draw a debug arrow in the parallel direction
-				//DrawDebugDirectionalArrow(GetWorld(), ClusterBall->GetActorLocation(), ClusterBall->GetActorLocation() + ParallelDirection * SphereComponent->GetScaledSphereRadius() * 2, 100, FColor::Red, false, 99, 0, 1);
+		//		////draw a debug arrow in the parallel direction
+		//		//DrawDebugDirectionalArrow(GetWorld(), ClusterBall->GetActorLocation(), ClusterBall->GetActorLocation() + ParallelDirection * SphereComponent->GetScaledSphereRadius() * 2, 100, FColor::Red, false, 99, 0, 1);
 
-				//get the first float curve value
-				float CurveValue1 = PhysicsSolver->ClusterSpeedCurve1->GetFloatValue(DotProduct);
+		//		//get the first float curve value
+		//		float CurveValue1 = PhysicsSolver->ClusterSpeedCurve1->GetFloatValue(DotProduct);
 
-				//get the second float curve value
-				float CurveValue2 = PhysicsSolver->ClusterSpeedCurve2->GetFloatValue(FVector::Dist(ClusterPos, ClusterBall->GetActorLocation()) / OurVelocity.Length());
+		//		//get the second float curve value
+		//		float CurveValue2 = PhysicsSolver->ClusterSpeedCurve2->GetFloatValue(FVector::Dist(ClusterPos, ClusterBall->GetActorLocation()) / OurVelocity.Length());
 
-				//get the third float curve value
-				float CurveValue3 = PhysicsSolver->ClusterSpeedCurve3->GetFloatValue(DotProduct);
+		//		//get the third float curve value
+		//		float CurveValue3 = PhysicsSolver->ClusterSpeedCurve3->GetFloatValue(DotProduct);
 
-				//the out vector for velocity
-				FVector OutVel = (-ClusterBallDirection * CurveValue3 + ParallelDirection * (1 - CurveValue3)) * CurveValue1 * OurVelocity.Length() * CurveValue2 / 2;
+		//		//the out vector for velocity
+		//		FVector OutVel = (-ClusterBallDirection * CurveValue3 + ParallelDirection * (1 - CurveValue3)) * CurveValue1 * OurVelocity.Length() * CurveValue2 / 2;
 
-				//add the exit direction to the array
-				OtherBallExitVelocities.Add(FVector(OutVel.X, OutVel.Y, 0));
+		//		//add the exit direction to the array
+		//		OtherBallExitVelocities.Add(FVector(OutVel.X, OutVel.Y, 0));
 
-				//add the angular exit direction to the array
-				OtherBallAngularExitVelocities.Add(ClusterBall->AngularVelocity);
+		//		//add the angular exit direction to the array
+		//		OtherBallAngularExitVelocities.Add(ClusterBall->AngularVelocity);
 
-				//reset the rotation of the cluster ball
-				ClusterBall->SphereComponent->SetWorldRotation(ClusterBall->StartRotation);
-			}
-		}
-		else
-		{
+		//		//reset the rotation of the cluster ball
+		//		ClusterBall->SphereComponent->SetWorldRotation(ClusterBall->StartRotation);
+		//	}
+		//}
+		//else
+		//{
 			//iterate over the overlapping balls
 			for (int i = 0; i < BallsToSetValues.Num(); i++)
 			{
@@ -901,9 +901,7 @@ bool ABallActor::ProcessHit(const FHitResult& HitResult, AActor* OtherActor)
 					LargestExitVelocity = OtherBallExitVelocity;
 				}
 			}
-		}
-
-		
+		//}
 
 		//default value for the max relative speed gain
 		float MaxRelativeSpeedGain = -1;
