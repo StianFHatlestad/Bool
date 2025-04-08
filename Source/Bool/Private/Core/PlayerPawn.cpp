@@ -89,6 +89,9 @@ void APlayerPawn::Tick(const float DeltaTime)
 	//call the parent implementation
 	Super::Tick(DeltaTime);
 
+	//empty the level actors array
+	LevelBallActors.Empty();
+
 	//temporary storage for the ball actors in the level
 	TArray<AActor*> LocBallActors;
 
