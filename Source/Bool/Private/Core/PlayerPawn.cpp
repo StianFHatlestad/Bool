@@ -89,6 +89,9 @@ void APlayerPawn::Tick(const float DeltaTime)
 	//call the parent implementation
 	Super::Tick(DeltaTime);
 
+	//empty the level actors array
+	LevelBallActors.Empty();
+
 	//temporary storage for the ball actors in the level
 	TArray<AActor*> LocBallActors;
 
@@ -302,9 +305,6 @@ void APlayerPawn::ShootCueBall(const FInputActionValue& Value)
 			//get the current shot speed
 			float LocCurrentShotSpeed = FMath::Clamp(FVector::Dist(CueBall->GetActorLocation(), GetMouseWorldPosition()) * ShotSpeedMultiplier, MinimumShootingSpeed, MaxShootingSpeed);
 
-			//print the current shot speed
-			GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5.f, FColor::Blue, FString::SanitizeFloat(LocCurrentShotSpeed));
-
 			//shoot the cue ball at the position
 			ShootCueBallAtPosition(Direction * LocCurrentShotSpeed, NAME_None);
 
@@ -456,8 +456,8 @@ void APlayerPawn::OnTurnEnd()
 		return;
 	}
 
-	//add on screen debug message
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, TEXT("Turn Ended. Current Turn: " + FString::FromInt(GameInstance->CurrentTurn)));
+	////add on screen debug message
+	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, TEXT("Turn Ended. Current Turn: " + FString::FromInt(GameInstance->CurrentTurn)));
 
 	//increment the current turn
 	GameInstance->CurrentTurn++;
