@@ -98,6 +98,10 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	TArray<ABallActor*> LevelBallActors;
 
+	//the current projected shot strength
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="BoolData")
+	float CurrentShotStrength = 0;
+
 	//constructor(s)
 	APlayerPawn();
 
