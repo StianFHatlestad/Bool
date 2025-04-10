@@ -89,6 +89,9 @@ void APlayerPawn::Tick(const float DeltaTime)
 	//call the parent implementation
 	Super::Tick(DeltaTime);
 
+	//update the shot strength variable
+	CurrentShotStrength = FMath::Clamp(FVector::Dist(CueBall->GetActorLocation(), GetMouseWorldPosition()) * ShotSpeedMultiplier, MinimumShootingSpeed, MaxShootingSpeed);
+
 	//empty the level actors array
 	LevelBallActors.Empty();
 
@@ -187,16 +190,16 @@ void APlayerPawn::ShootCueBallAtPosition(FVector NewVelocity, const FName BoneNa
 	const FVector LocNewVelocity = (NewVelocity.GetSafeNormal() * (1 - DeflectionFloatCurveValue) + PerpendicularVector * DeflectionFloatCurveValue) * NewVelocity.Size() * ShotStrengthCurveValue;
 
 	//storage for the pitch component of the angular velocity to give the cue ball
-	float Pitch = FVector::DotProduct(-NewVelocity.GetSafeNormal(), FVector::XAxisVector) * CueBallHitLocation.Y;
+	float Pitch = FVector::DotProduct(-NewVelocity.GetSafeNormal(), CueBall->SphereComponent->GetForwardVector()) * CueBallHitLocation.Y;
 
 	//storage for the side spin component of the pitch
-	float PitchSideSpin = FVector::DotProduct(NewVelocity.GetSafeNormal(), FVector::XAxisVector) * -CueBallHitLocation.X * FMath::Sign(FVector::DotProduct(NewVelocity.GetSafeNormal(), FVector::XAxisVector));
+	float PitchSideSpin = FVector::DotProduct(NewVelocity.GetSafeNormal(), CueBall->SphereComponent->GetForwardVector()) * -CueBallHitLocation.X * FMath::Sign(FVector::DotProduct(NewVelocity.GetSafeNormal(), CueBall->SphereComponent->GetForwardVector()));
 
 	//storage for the roll component of the angular velocity to give the cue ball
-	float Roll = FVector::DotProduct(NewVelocity.GetSafeNormal(), FVector::YAxisVector) * CueBallHitLocation.Y;
+	float Roll = FVector::DotProduct(NewVelocity.GetSafeNormal(), CueBall->SphereComponent->GetRightVector()) * CueBallHitLocation.Y;
 
 	//storage for the side spin component of the roll
-	float RollSideSpin = FVector::DotProduct(NewVelocity.GetSafeNormal(), FVector::YAxisVector) * -CueBallHitLocation.X * FMath::Sign(FVector::DotProduct(NewVelocity.GetSafeNormal(), FVector::YAxisVector));
+	float RollSideSpin = FVector::DotProduct(NewVelocity.GetSafeNormal(), CueBall->SphereComponent->GetRightVector()) * -CueBallHitLocation.X * FMath::Sign(FVector::DotProduct(NewVelocity.GetSafeNormal(), CueBall->SphereComponent->GetRightVector()));
 
 	//the angular rotaion to give the cue ball
 	FRotator OutPutAngularVelocity = FRotator(Pitch, PitchSideSpin + RollSideSpin, Roll) * SpinStrengthCurveValue * NewVelocity.Length();
@@ -328,8 +331,8 @@ void APlayerPawn::ShootCueBall(const FInputActionValue& Value)
 				//get the current shot speed
 				float LocCurrentShotSpeed = FMath::Clamp(FVector::Dist(CueBall->GetActorLocation(), GetMouseWorldPosition()) * ShotSpeedMultiplier, MinimumShootingSpeed, MaxShootingSpeed);
 
-				//print the current shot speed
-				GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5.f, FColor::Blue, FString::SanitizeFloat(LocCurrentShotSpeed));
+				////print the current shot speed
+				//GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5.f, FColor::Blue, FString::SanitizeFloat(LocCurrentShotSpeed));
 
 				//shoot the cue ball at the position
 				ShootCueBallAtPosition(Direction * LocCurrentShotSpeed, NAME_None);
