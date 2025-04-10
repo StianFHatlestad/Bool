@@ -100,7 +100,7 @@ public:
 
 	//the current projected shot strength
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="BoolData")
-	float ProjectedStrength = 0;
+	float CurrentShotStrength = 0;
 
 	//constructor(s)
 	APlayerPawn();
