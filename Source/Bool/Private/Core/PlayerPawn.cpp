@@ -89,6 +89,9 @@ void APlayerPawn::Tick(const float DeltaTime)
 	//call the parent implementation
 	Super::Tick(DeltaTime);
 
+	//update the shot strength variable
+	CurrentShotStrength = FMath::Clamp(FVector::Dist(CueBall->GetActorLocation(), GetMouseWorldPosition()) * ShotSpeedMultiplier, MinimumShootingSpeed, MaxShootingSpeed);
+
 	//empty the level actors array
 	LevelBallActors.Empty();
 
