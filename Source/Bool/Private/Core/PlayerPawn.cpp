@@ -89,8 +89,15 @@ void APlayerPawn::Tick(const float DeltaTime)
 	//call the parent implementation
 	Super::Tick(DeltaTime);
 
-	//check if we have a valid cue ball
+	//check if we don't have a valid cue ball
 	if (!CueBall->IsValidLowLevelFast())
+	{
+		//return early to prevent further execution
+		return;
+	}
+
+	//check if we don't have a valid player controller
+	if (!PlayerController->IsValidLowLevelFast())
 	{
 		//return early to prevent further execution
 		return;
