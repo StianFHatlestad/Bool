@@ -89,6 +89,23 @@ void APlayerPawn::Tick(const float DeltaTime)
 	//call the parent implementation
 	Super::Tick(DeltaTime);
 
+	//check if we don't have a valid cue ball
+	if (!CueBall->IsValidLowLevelFast())
+	{
+		//return early to prevent further execution
+		return;
+	}
+
+	//check if we don't have a valid player controller
+	if (!PlayerController->IsValidLowLevelFast())
+	{
+		//return early to prevent further execution
+		return;
+	}
+	
+	//update the shot strength variable
+	CurrentShotStrength = FMath::Clamp(FVector::Dist(CueBall->GetActorLocation(), GetMouseWorldPosition()) * ShotSpeedMultiplier, MinimumShootingSpeed, MaxShootingSpeed);
+
 	//empty the level actors array
 	LevelBallActors.Empty();
 
