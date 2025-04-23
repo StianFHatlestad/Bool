@@ -42,6 +42,14 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Inputsystem")
 	TObjectPtr<UInputAction> IA_Shoot = nullptr;
 
+	//toggle for whether the player fires the ball in the direction of the mouse cursor or the opposite direction
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData")
+	bool bFireInMouseDir = true;
+
+	//storage for the direction we're firing in
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData")
+	FVector FireDir = FVector::Zero();
+
 	//the input action for resetting the aim of the ball
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Inputsystem")
 	TObjectPtr<UInputAction> IA_ResetAim = nullptr;
