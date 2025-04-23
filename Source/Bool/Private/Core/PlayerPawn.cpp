@@ -134,6 +134,18 @@ void APlayerPawn::Tick(const float DeltaTime)
 	{
 		//set the aim location to the current mouse world position
 		AimLocation = GetMouseWorldPosition();
+
+		//check if bFireInMouseDir is true
+		if (bFireInMouseDir)
+		{
+			//get the direction to shoot the cue ball
+			FireDir = (AimLocation - CueBall->GetActorLocation()).GetSafeNormal();
+		}
+		else
+		{
+			//get the direction to shoot the cue ball
+			FireDir = (CueBall->GetActorLocation() - AimLocation).GetSafeNormal();
+		}
 	}
 
 	//check if the game instance is not valid
@@ -316,14 +328,11 @@ void APlayerPawn::ShootCueBall(const FInputActionValue& Value)
 		//check if the shot delay is less than or equal to zero
 		if (ShotDelay <= 0)
 		{
-			//get the direction to shoot the cue ball
-			const FVector Direction = (CueBall->GetActorLocation() - AimLocation).GetSafeNormal();
-
 			//get the current shot speed
 			float LocCurrentShotSpeed = FMath::Clamp(FVector::Dist(CueBall->GetActorLocation(), GetMouseWorldPosition()) * ShotSpeedMultiplier, MinimumShootingSpeed, MaxShootingSpeed);
 
 			//shoot the cue ball at the position
-			ShootCueBallAtPosition(Direction * LocCurrentShotSpeed, NAME_None);
+			ShootCueBallAtPosition(FireDir * LocCurrentShotSpeed, NAME_None);
 
 			//set turn in progress to true
 			GameInstance->bTurnInProgress = true;
