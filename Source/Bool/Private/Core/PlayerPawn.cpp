@@ -307,8 +307,8 @@ void APlayerPawn::LaunchCueBall()
 	//toggle locking the shooting trajectory
 	bLockedShotTrajectory = !bLockedShotTrajectory;
 
-	//call the blueprint event
-	OnCueBallShotBP();
+	//clear the shot delay timer
+	GetWorld()->GetTimerManager().ClearTimer(ShotDelayTimerHandle);
 }
 
 void APlayerPawn::ShootCueBall(const FInputActionValue& Value)
@@ -343,8 +343,8 @@ void APlayerPawn::ShootCueBall(const FInputActionValue& Value)
 	//check if we have a valid cue ball
 	if (CueBall->IsValidLowLevelFast())
 	{
-		//the timer handle for the shot delay
-		FTimerHandle ShotDelayTimerHandle;
+		//call the blueprint event
+		OnCueBallShotBP();
 
 		//check if the shot delay is less than or equal to zero
 		if (ShotDelay <= 0)

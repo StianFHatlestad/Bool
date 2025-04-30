@@ -110,6 +110,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="BoolData")
 	float CurrentShotStrength = 0;
 
+	//the timer handle for the shot delay
+	UPROPERTY()
+	FTimerHandle ShotDelayTimerHandle;
+
 	//constructor(s)
 	APlayerPawn();
 
