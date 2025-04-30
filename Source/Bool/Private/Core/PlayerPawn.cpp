@@ -343,6 +343,13 @@ void APlayerPawn::ShootCueBall(const FInputActionValue& Value)
 	//check if we have a valid cue ball
 	if (CueBall->IsValidLowLevelFast())
 	{
+		//check if the shot delay timer is already active
+		if (GetWorld()->GetTimerManager().IsTimerActive(ShotDelayTimerHandle))
+		{
+			//return early to prevent further execution
+			return;
+		}
+
 		//call the blueprint event
 		OnCueBallShotBP();
 
