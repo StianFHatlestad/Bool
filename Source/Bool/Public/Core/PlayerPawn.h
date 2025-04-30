@@ -120,7 +120,7 @@ public:
 
 	//function to shoot the cue ball at a specific position
 	UFUNCTION(BlueprintCallable)
-	void ShootCueBallAtPosition(FVector NewVelocity, FName BoneName) const;
+	void ShootCueBallAtPosition(FVector NewVelocity) const;
 
 	//function to set the current cue ball hit location
 	UFUNCTION(BlueprintCallable)
@@ -129,6 +129,10 @@ public:
 	//function to check if we can shoot
 	UFUNCTION(BlueprintCallable)
 	bool CanShoot() const;
+
+	//function to impart the force to the cue ball
+	UFUNCTION(BlueprintCallable)
+	void LaunchCueBall();
 
 	//input function for shooting the cue ball
 	UFUNCTION(BlueprintCallable)
@@ -150,6 +154,10 @@ public:
 	void OnTurnEnd();
 
 	//blueprint events
+
+	//event called when the cue ball is shot
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnCueBallShotBP();
 
 	//event called when the turn ends
 	UFUNCTION(BlueprintImplementableEvent)
