@@ -186,7 +186,7 @@ void APlayerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	}
 }
 
-void APlayerPawn::ShootCueBallAtPosition(FVector NewVelocity, const FName BoneName) const
+void APlayerPawn::ShootCueBallAtPosition(FVector NewVelocity) const
 {
 	//check if we don't have a valid deflection float curve and shot strength curve and spin strength curve
 	if (!(DeflectionCurve->IsValidLowLevelFast() && ShotStrengthCurve->IsValidLowLevelFast() && SpinStrengthCurve->IsValidLowLevelFast()))
@@ -290,6 +290,27 @@ bool APlayerPawn::CanShoot() const
 	return true;
 }
 
+void APlayerPawn::LaunchCueBall()
+{
+	//get the current shot speed
+	float LocCurrentShotSpeed = FMath::Clamp(FVector::Dist(CueBall->GetActorLocation(), GetMouseWorldPosition()) * ShotSpeedMultiplier, MinimumShootingSpeed, MaxShootingSpeed);
+
+	//shoot the cue ball at the position
+	ShootCueBallAtPosition(FireDir * LocCurrentShotSpeed);
+
+	//set turn in progress to true
+	GameInstance->bTurnInProgress = true;
+
+	//set the next available turn time
+	GameInstance->AvailableTurnTime = GetWorld()->GetTimeSeconds() + GameInstance->MinTurnTime;
+
+	//toggle locking the shooting trajectory
+	bLockedShotTrajectory = !bLockedShotTrajectory;
+
+	//call the blueprint event
+	OnCueBallShotBP();
+}
+
 void APlayerPawn::ShootCueBall(const FInputActionValue& Value)
 {
 	//check if the game instance is not valid
@@ -328,46 +349,16 @@ void APlayerPawn::ShootCueBall(const FInputActionValue& Value)
 		//check if the shot delay is less than or equal to zero
 		if (ShotDelay <= 0)
 		{
-			//get the current shot speed
-			float LocCurrentShotSpeed = FMath::Clamp(FVector::Dist(CueBall->GetActorLocation(), GetMouseWorldPosition()) * ShotSpeedMultiplier, MinimumShootingSpeed, MaxShootingSpeed);
-
-			//shoot the cue ball at the position
-			ShootCueBallAtPosition(FireDir * LocCurrentShotSpeed, NAME_None);
-
-			//set turn in progress to true
-			GameInstance->bTurnInProgress = true;
-
-			//set the next available turn time
-			GameInstance->AvailableTurnTime = GetWorld()->GetTimeSeconds() + GameInstance->MinTurnTime;
-
-			//toggle locking the shooting trajectory
-			bLockedShotTrajectory = !bLockedShotTrajectory;
+			//launch the cue ball immediately
+			LaunchCueBall();
 		}
 		else
 		{
 			//set lambda function to shoot the cue ball after the shot delay
 			GetWorld()->GetTimerManager().SetTimer(ShotDelayTimerHandle, [this]
 			{
-				//get the direction to shoot the cue ball
-				const FVector Direction = (CueBall->GetActorLocation() - AimLocation).GetSafeNormal();
-
-				//get the current shot speed
-				float LocCurrentShotSpeed = FMath::Clamp(FVector::Dist(CueBall->GetActorLocation(), GetMouseWorldPosition()) * ShotSpeedMultiplier, MinimumShootingSpeed, MaxShootingSpeed);
-
-				////print the current shot speed
-				//GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5.f, FColor::Blue, FString::SanitizeFloat(LocCurrentShotSpeed));
-
-				//shoot the cue ball at the position
-				ShootCueBallAtPosition(Direction * LocCurrentShotSpeed, NAME_None);
-
-				//set turn in progress to true
-				GameInstance->bTurnInProgress = true;
-
-				//set the next available turn time
-				GameInstance->AvailableTurnTime = GetWorld()->GetTimeSeconds() + GameInstance->MinTurnTime;
-
-				//toggle locking the shooting trajectory
-				bLockedShotTrajectory = !bLockedShotTrajectory;
+				//launch the cue ball
+				LaunchCueBall();
 			}, ShotDelay, false);	
 		}
 	}
