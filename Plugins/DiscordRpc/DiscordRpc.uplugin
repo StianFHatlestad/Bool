@@ -10,7 +10,7 @@
 	"DocsURL": "https://github.com/LouisRaverdy/DiscordPluginUE",
 	"MarketplaceURL": "",
 	"SupportURL": "https://github.com/LouisRaverdy/DiscordPluginUE",
-	"EngineVersion": "5.4.0",
+	"EngineVersion": "5.6.0",
 	"CanContainContent": true,
 	"Installed": true,
 	"Modules": [
