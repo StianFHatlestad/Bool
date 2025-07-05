@@ -176,6 +176,7 @@ void APlayerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	{
 		EnhancedInputComponent->BindAction(IA_Shoot, ETriggerEvent::Triggered, this, &APlayerPawn::ShootCueBall);
 		EnhancedInputComponent->BindAction(IA_ResetAim, ETriggerEvent::Triggered, this, &APlayerPawn::ResetAim);
+		EnhancedInputComponent->BindAction(IA_Rewind, ETriggerEvent::Triggered, this, &APlayerPawn::StartRewind); //TODO: remove this and make it a button on UI
 	}
 
 	//check if we have a valid input subsystem
@@ -513,4 +514,24 @@ void APlayerPawn::OnTurnEnd()
 
 	//call the OnTurnEnd function of the game instance
 	GameInstance->OnTurnEndBP();
+}
+//TODO: implement this porperly in the UI
+void APlayerPawn::StartRewind()
+{
+	//Get all the balls on the scene
+	TArray<AActor*> Balls;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABallActor::StaticClass(), Balls);
+
+	for (AActor* BallActor : Balls)
+	{
+		//cast the ball actor to a ball actor
+		const TObjectPtr<ABallActor> Ball = Cast<ABallActor>(BallActor);
+		//check if the ball is valid
+		if (Ball->IsValidLowLevel())
+		{
+			//Activate the rewind mode
+			Ball->bIsRewinding = true;
+
+		}
+	}
 }

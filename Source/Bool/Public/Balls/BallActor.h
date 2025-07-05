@@ -19,6 +19,45 @@ enum EBallPhysicsState
 	Ebps_Sliding,
 };
 
+USTRUCT(BlueprintType)
+struct FPositionAndRotationData {
+	GENERATED_BODY()
+
+	//storage for the positions of the ball
+	UPROPERTY(BlueprintReadWrite)
+	TArray<FVector> Positions;
+	//storage for the rotations of the ball
+	UPROPERTY(BlueprintReadWrite)
+	TArray<FRotator> Rotations;
+	//function to add a position and rotation to the tracker
+
+	void AddPositionAndRotation(const FVector& Position, const FRotator& Rotation)
+	{
+		Positions.Add(Position);
+		Rotations.Add(Rotation);
+	}
+	//returns the last position and removes it from the array
+	FVector popLastPos() {
+		if (Positions.Num() > 0)
+		{
+			FVector LastPos = Positions.Last();
+			Positions.RemoveAt(Positions.Num() - 1);
+			return LastPos;
+		}
+		return FVector::ZeroVector;
+	}
+	//Returns the last rotation and removes it from the array
+	FRotator popLastRot() {
+		if (Rotations.Num() > 0)
+		{
+			FRotator LastRot = Rotations.Last()
+			Rotations.RemoveAt(Rotations.Num() - 1);
+			return LastRot;
+		}
+		return FRotator::ZeroRotator;
+	}
+};
+
 //much of the physics is copied and modified from https://ekiefl.github.io/2020/04/24/pooltool-theory/
 
 UCLASS()
@@ -27,6 +66,13 @@ class BOOL_API ABallActor : public AActor
 	GENERATED_BODY()
 	
 public:
+	
+
+	//Container for position and rotation data for rewinding
+	UPROPERTY(BlueprintReadWrite, Category = "BoolData|Rewind")
+	TArray<FPositionAndRotationData> PositionAndRotationHistory;
+	UPROPERTY(BlueprintReadWrite, Category = "BoolData|Rewind")
+	bool bIsRewinding{ false };
 
 	//sphere component for the cue ball
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
@@ -140,6 +186,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BoolData|Physics")
 	TEnumAsByte<EBallPhysicsState> PhysicsState = Ebps_Stationary;
 
+	//The previous physics state of the ball, used for comparison
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BoolData|Physics")
+	TEnumAsByte<EBallPhysicsState> PreviousPhysicsState = PhysicsState;
 	////the spinning friction coefficient of the table
 	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics|Spinning")
 	//float TableSpinningFrictionCoefficient = 0.6;
@@ -316,4 +365,32 @@ public:
 
 	////function to get a physics state enum value as a string
 	//FString GetPhysicsStateAsString(EBallPhysicsState InPhysicsState) const;
+
+	UFUNCTION(BlueprintCallable)
+	FVector getStructPos()
+	{
+		if (PositionAndRotationHistory.Num() > 0)
+		{
+			return PositionAndRotationHistory.Last().popLastPos();
+		}
+		return FVector::ZeroVector;
+	}
+
+	UFUNCTION(BlueprintCallable)
+	FRotator getStructRot()
+	{
+		if (PositionAndRotationHistory.Num() > 0)
+		{
+			return PositionAndRotationHistory.Last().popLastRot();
+		}
+		return FRotator::ZeroRotator;
+	}
+	UFUNCTION(BlueprintCallable)
+	void removeLastItemFromPosHistory()
+	{
+		if (PositionAndRotationHistory.Num() > 0)
+		{
+			PositionAndRotationHistory.RemoveAt(PositionAndRotationHistory.Num() - 1);
+		}
+	}
 };

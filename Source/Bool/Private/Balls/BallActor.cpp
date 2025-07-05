@@ -175,6 +175,22 @@ void ABallActor::Tick(const float DeltaTime)
 		OldPositions.RemoveAt(0);
 	}
 
+
+	//Track the ball movement on every turn
+	if (PreviousPhysicsState == Ebps_Stationary && PhysicsState != Ebps_Stationary)
+	{
+		//add a new position and rotation struct to the history
+		PositionAndRotationHistory.Add(FPositionAndRotationData());
+	}
+
+	if (PhysicsState != Ebps_Stationary && PositionAndRotationHistory.Num() > 0 )
+	{
+		//add the current position and rotation to the last position and rotation struct
+		PositionAndRotationHistory.Last().AddPositionAndRotation(GetActorLocation(), GetActorRotation());
+	}
+
+	PreviousPhysicsState = PhysicsState;
+
 }
 
 FVector ABallActor::GetBallAngularVelocityVec() const
@@ -1405,3 +1421,20 @@ void ABallActor::ErrorResetVelocities(const FString ErrorMessage, const bool bPr
 //	}
 //}
 
+void APlayerPawn::OnRewindBP()
+{
+	if (positionandrotationhistory)
+	//Make sure we're not checking an empty array
+	if (Ball->PositionAndRotationHistory.IsEmpty()) { continue; }
+	//check if the ball has a position and rotation history
+	while (Ball->PositionAndRotationHistory.Last().Positions.Num() > 0)
+	{
+		FVector newLocation = FMath::VInterpConstantTo(Ball->GetActorLocation(), Ball->PositionAndRotationHistory.Last().popLastPos(), UGameplayStatics::GetWorldDeltaSeconds(this), 200.0f);
+		Ball->SetActorLocation(newLocation);
+
+	}
+	removeLastItemFromPosHistory();
+
+		}
+	}
+}

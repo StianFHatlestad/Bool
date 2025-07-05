@@ -42,6 +42,10 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Inputsystem")
 	TObjectPtr<UInputAction> IA_Shoot = nullptr;
 
+	//the input action for rewind. TODO: remove this and make it a button on UI
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Inputsystem")
+	TObjectPtr<UInputAction> IA_Rewind = nullptr;
+
 	//toggle for whether the player fires the ball in the direction of the mouse cursor or the opposite direction
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData")
 	bool bFireInMouseDir = true;
@@ -166,4 +170,8 @@ public:
 	//event called when the turn ends
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnTurnEndBP();
+
+	//Event called when the player wants to rewind the game. Currently only rewinds ball positions. TODO: finish and implement as button on UI
+	UFUNCTION()
+	void StartRewind();
 };
