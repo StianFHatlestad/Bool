@@ -50,7 +50,7 @@ struct FPositionAndRotationData {
 	FRotator popLastRot() {
 		if (Rotations.Num() > 0)
 		{
-			FRotator LastRot = Rotations.Last()
+			FRotator LastRot = Rotations.Last();
 			Rotations.RemoveAt(Rotations.Num() - 1);
 			return LastRot;
 		}
@@ -363,6 +363,9 @@ public:
 	UFUNCTION()
 	void ErrorResetVelocities(FString ErrorMessage = "", bool bPrintCallStack = false);
 
+	//Function for rewinding the ball's position and rotation
+	UFUNCTION(BlueprintCallable)
+	void OnRewind(float DeltaTime, float MoveSpee);
 	////function to get a physics state enum value as a string
 	//FString GetPhysicsStateAsString(EBallPhysicsState InPhysicsState) const;
 

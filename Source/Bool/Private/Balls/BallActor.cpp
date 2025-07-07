@@ -17,7 +17,7 @@
 
 ABallActor::ABallActor()
 {
-	//enable ticking
+	//enable  ing
 	PrimaryActorTick.bCanEverTick = true;
 
 	//create the component(s)
@@ -190,6 +190,13 @@ void ABallActor::Tick(const float DeltaTime)
 	}
 
 	PreviousPhysicsState = PhysicsState;
+
+	//Rewinds the ball if the rewind flag is set, this is called in the PlayerPawn class
+	//OnRewind() will revert the flag when done.
+	if (bIsRewinding)
+	{
+		OnRewind(DeltaTime,2.0f);
+	}
 
 }
 
@@ -1388,6 +1395,40 @@ void ABallActor::ErrorResetVelocities(const FString ErrorMessage, const bool bPr
 	SetBallAngularVelocity(FRotator::ZeroRotator);
 }
 
+void ABallActor::OnRewind(float DeltaTime, float MoveSpeed)
+{
+	//check if the ball has a position and rotation history
+	if (PositionAndRotationHistory.IsEmpty())
+	{
+		//return early to prevent further execution
+		bIsRewinding = false;
+		return;
+	}
+
+	//check if the ball is not in the last position and rotation history
+	if (PositionAndRotationHistory.Last().Positions.Num() == 0)
+	{
+		//return early to prevent further execution
+		removeLastItemFromPosHistory();
+		bIsRewinding = false;
+		return;
+	}
+
+	//get the last position and rotation from the history
+	FPositionAndRotationData& LastRewindHistory = PositionAndRotationHistory.Last();
+
+	FVector targetLocation = LastRewindHistory.Positions.Last();
+		FVector newLocation = FMath::VInterpConstantTo(GetActorLocation(), targetLocation, DeltaTime, MoveSpeed);
+		//set the actor location to the last position
+	SetActorLocation(newLocation);
+
+	//Remove last position in struct if we ball is close enough
+	if (FVector::Dist(newLocation, targetLocation) < 1.0f)
+	{
+		LastRewindHistory.popLastPos();
+	}
+}
+
 //FString ABallActor::GetPhysicsStateAsString(EBallPhysicsState InPhysicsState) const
 //{
 //	//check the physics state
@@ -1420,21 +1461,3 @@ void ABallActor::ErrorResetVelocities(const FString ErrorMessage, const bool bPr
 //		}
 //	}
 //}
-
-void APlayerPawn::OnRewindBP()
-{
-	if (positionandrotationhistory)
-	//Make sure we're not checking an empty array
-	if (Ball->PositionAndRotationHistory.IsEmpty()) { continue; }
-	//check if the ball has a position and rotation history
-	while (Ball->PositionAndRotationHistory.Last().Positions.Num() > 0)
-	{
-		FVector newLocation = FMath::VInterpConstantTo(Ball->GetActorLocation(), Ball->PositionAndRotationHistory.Last().popLastPos(), UGameplayStatics::GetWorldDeltaSeconds(this), 200.0f);
-		Ball->SetActorLocation(newLocation);
-
-	}
-	removeLastItemFromPosHistory();
-
-		}
-	}
-}
