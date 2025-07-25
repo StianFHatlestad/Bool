@@ -175,27 +175,27 @@ void ABallActor::Tick(const float DeltaTime)
 		OldPositions.RemoveAt(0);
 	}
 
-
+/*
 	//Track the ball movement on every turn
 	if (PreviousPhysicsState == Ebps_Stationary && PhysicsState != Ebps_Stationary)
 	{
 		//add a new position and rotation struct to the history
 		PositionAndRotationHistory.Add(FPositionAndRotationData());
 	}
-
+*/
 	if (PhysicsState != Ebps_Stationary && PositionAndRotationHistory.Num() > 0 )
 	{
 		//add the current position and rotation to the last position and rotation struct
 		PositionAndRotationHistory.Last().AddPositionAndRotation(GetActorLocation(), GetActorRotation());
 	}
 
-	PreviousPhysicsState = PhysicsState;
+	//PreviousPhysicsState = PhysicsState;
 
 	//Rewinds the ball if the rewind flag is set, this is called in the PlayerPawn class
 	//OnRewind() will revert the flag when done.
 	if (bIsRewinding)
 	{
-		OnRewind(DeltaTime,2.0f);
+		OnRewind(DeltaTime,20.0f);
 	}
 
 }
@@ -342,10 +342,18 @@ void ABallActor::SetBoolPhysicsState(const TEnumAsByte<EBallPhysicsState> NewPhy
 		return;
 	}
 
-	//set the new bool physics state
+	//set the new bool physics state+
 	PhysicsState = NewPhysicsState;
-}
 
+	if (PreviousPhysicsState == Ebps_Stationary && PhysicsState != Ebps_Stationary)
+	{
+		//add a new position and rotation struct to the history
+		PositionAndRotationHistory.Add(FPositionAndRotationData());
+		
+		PreviousPhysicsState = PhysicsState;
+	}
+}
+ 
 bool ABallActor::IsOutsideTable() const
 {
 	return !UKismetMathLibrary::IsPointInBox(GetActorLocation(), BoxPosition, BoxSize);
@@ -1405,7 +1413,7 @@ void ABallActor::OnRewind(float DeltaTime, float MoveSpeed)
 		return;
 	}
 
-	//check if the ball is not in the last position and rotation history
+	//Check if the vector holding the positions is not empty
 	if (PositionAndRotationHistory.Last().Positions.Num() == 0)
 	{
 		//return early to prevent further execution
@@ -1414,18 +1422,27 @@ void ABallActor::OnRewind(float DeltaTime, float MoveSpeed)
 		return;
 	}
 
-	//get the last position and rotation from the history
-	FPositionAndRotationData& LastRewindHistory = PositionAndRotationHistory.Last();
+	GameInstance->rewindIndex++;
 
-	FVector targetLocation = LastRewindHistory.Positions.Last();
+	if (PositionAndRotationHistory.IsValidIndex(GameInstance->rewindIndex))
+	{
+		FPositionAndRotationData& LastRewindHistory = PositionAndRotationHistory.Last();
+
+		FVector targetLocation = LastRewindHistory.Positions.Last();
 		FVector newLocation = FMath::VInterpConstantTo(GetActorLocation(), targetLocation, DeltaTime, MoveSpeed);
 		//set the actor location to the last position
-	SetActorLocation(newLocation);
-
-	//Remove last position in struct if we ball is close enough
-	if (FVector::Dist(newLocation, targetLocation) < 1.0f)
+		SetActorLocation(newLocation);
+		 
+		//Remove last position in struct if we ball is close enough
+		if (FVector::Dist(GetActorLocation(), targetLocation) < 0.01f)
+		{
+			LastRewindHistory.Positions.Pop();
+			//LastRewindHistory.Rotations.Pop();
+		}
+	}
+	else
 	{
-		LastRewindHistory.popLastPos();
+		return;
 	}
 }
 

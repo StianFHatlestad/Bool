@@ -188,7 +188,7 @@ public:
 
 	//The previous physics state of the ball, used for comparison
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BoolData|Physics")
-	TEnumAsByte<EBallPhysicsState> PreviousPhysicsState = PhysicsState;
+	TEnumAsByte<EBallPhysicsState> PreviousPhysicsState = Ebps_Stationary;
 	////the spinning friction coefficient of the table
 	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics|Spinning")
 	//float TableSpinningFrictionCoefficient = 0.6;

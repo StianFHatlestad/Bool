@@ -10,6 +10,7 @@
 #include "EnhancedInput/Public/EnhancedInputSubsystems.h"
 #include "Camera/CameraComponent.h"
 #include "Chaos/Particle/ParticleUtilities.h"
+#include "NiagaraComponent.h"
 #include "Components/BoxComponent.h"
 #include "Components/SphereComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -24,9 +25,20 @@ APlayerPawn::APlayerPawn()
 
 	//create the camera component
 	CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComponent"));
+	/*
+	//Create Niagara particle system component for aiming ring and lines
+	NS_AimingLine = CreateDefaultSubobject<UNiagaraComponent>(TEXT("NS_AimingLine"));
+	NS_AimingRing = CreateDefaultSubobject<UNiagaraComponent>(TEXT("NS_AimingRing"));
+	NS_AimingLineBounces = CreateDefaultSubobject<UNiagaraComponent>(TEXT("AimingLineBounces"));
 
 	//setup attachment(s)
 	CameraComponent->SetupAttachment(RootComponent);
+	NS_AimingLine->SetupAttachment(CameraComponent);
+	NS_AimingRing->SetupAttachment(CameraComponent);
+	NS_AimingLineBounces->SetupAttachment(CameraComponent);
+
+	*/
+
 
 	//set the rotation of the camera component
 	CameraComponent->SetRelativeRotation(FRotator(0,-90,0));
@@ -163,6 +175,7 @@ void APlayerPawn::Tick(const float DeltaTime)
 
 		//set turn in progress to false
 		GameInstance->bTurnInProgress = false;
+		GameInstance->rewindIndex += 1;//NOTE: Temp fix to make sure the right rewind data is used
 	}
 }
 
@@ -209,7 +222,7 @@ void APlayerPawn::ShootCueBallAtPosition(FVector NewVelocity) const
 
 	//get the shot strength curve value
 	const float ShotStrengthCurveValue = ShotStrengthCurve->GetFloatValue(FVector::DotProduct(AimToCueBall, NewVelocity.GetSafeNormal()));
-
+	 
 	//get the spin strength curve value
 	const float SpinStrengthCurveValue = SpinStrengthCurve->GetFloatValue(NewVelocity.Length() / GetWorld()->GetDefaultPhysicsVolume()->TerminalVelocity);
 
@@ -530,8 +543,32 @@ void APlayerPawn::StartRewind()
 		if (Ball->IsValidLowLevel())
 		{
 			//Activate the rewind mode
+			//GameInstance->rewindIndex -= 1;
 			Ball->bIsRewinding = true;
-
 		}
 	}
 }
+/*
+void APlayerPawn::DrawBoolPlayerDebugArrows()
+{
+	FVector3d CueBallLocation = CueBall->GetActorLocation();
+	float ScaledSphereRadius = CueBall->SphereComponent->GetScaledSphereRadius();
+
+	//Get distance between where we are aiming from and cue ball
+	float InitialArrowDrawDist = FVector::Dist(AimLocation,CueBallLocation);
+	if (CueBall->IsValidLowLevel())
+	{
+		if (CanShoot())
+		{
+			NS_AimingLine->SetVisibility(true);
+				
+		}
+		else
+		{
+			NS_AimingLine->SetVisibility(false);
+			NS_AimingLineBounces->SetVisibility(false);
+			NS_AimingRing->SetVisibility(false);
+		}
+	}
+}
+*/

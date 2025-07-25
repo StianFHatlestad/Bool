@@ -21,7 +21,17 @@ public:
 	//the camera component for this pawn
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<class UCameraComponent> CameraComponent = nullptr;
+	/*
+	//Niagara particle system component for visual effects
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<class UNiagaraComponent> NS_AimingRing{nullptr};
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<class UNiagaraComponent> NS_AimingLine{ nullptr };
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<class UNiagaraComponent> NS_AimingLineBounces{ nullptr };
+	*/
 	//the current cue ball we're using
 	UPROPERTY(BlueprintReadWrite)
 	TObjectPtr<ABallActor> CueBall = nullptr;
@@ -174,4 +184,7 @@ public:
 	//Event called when the player wants to rewind the game. Currently only rewinds ball positions. TODO: finish and implement as button on UI
 	UFUNCTION()
 	void StartRewind();
+	/*
+	UFUNCTION()
+	void DrawBoolPlayerDebugArrows();*/
 };
