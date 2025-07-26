@@ -353,9 +353,9 @@ void ABallActor::SetBoolPhysicsState(const TEnumAsByte<EBallPhysicsState> NewPhy
 	{
 		//add a new position and rotation struct to the history
 		PositionAndRotationHistory.Add(FPositionAndRotationData());		
-		//set the new bool physics state
-		PreviousPhysicsState = PhysicsState;
 	}
+	//set the new bool physics state
+	PreviousPhysicsState = PhysicsState;
 }
  
 bool ABallActor::IsOutsideTable() const

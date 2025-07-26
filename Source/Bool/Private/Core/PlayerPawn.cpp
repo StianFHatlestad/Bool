@@ -175,7 +175,6 @@ void APlayerPawn::Tick(const float DeltaTime)
 
 		//set turn in progress to false
 		GameInstance->bTurnInProgress = false;
-		GameInstance->rewindIndex += 1;//NOTE: Temp fix to make sure the right rewind data is used
 	}
 }
 
@@ -327,6 +326,8 @@ void APlayerPawn::LaunchCueBall()
 
 void APlayerPawn::ShootCueBall(const FInputActionValue& Value)
 {
+
+	
 	//check if the game instance is not valid
 	if (!GameInstance->IsValidLowLevel())
 	{
@@ -353,6 +354,8 @@ void APlayerPawn::ShootCueBall(const FInputActionValue& Value)
 		//return early to prevent further execution
 		return;
 	}
+
+	
 
 	//check if we have a valid cue ball
 	if (CueBall->IsValidLowLevelFast())
@@ -382,6 +385,9 @@ void APlayerPawn::ShootCueBall(const FInputActionValue& Value)
 				LaunchCueBall();
 			}, ShotDelay, false);	
 		}
+
+		//Add to the rewindindex as we are about to shoot
+		GameInstance->rewindIndex ++; //TODO: this makes more sense to be done in the GameInstance class, and also yalla løsning
 	}
 }
 
@@ -536,19 +542,18 @@ void APlayerPawn::StartRewind()
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABallActor::StaticClass(), Balls);
 
 	for (AActor* BallActor : Balls)
-	{
+	 {
 		//cast the ball actor to a ball actor
 		const TObjectPtr<ABallActor> Ball = Cast<ABallActor>(BallActor);
 		//check if the ball is valid
 		if (Ball->IsValidLowLevel())
 		{
 			//Activate the rewind mode
-			//GameInstance->rewindIndex -= 1;
 			Ball->bIsRewinding = true;
 		}
 	}
 }
-/*
+/* TODO: finish translation from blueprint to C++ code
 void APlayerPawn::DrawBoolPlayerDebugArrows()
 {
 	FVector3d CueBallLocation = CueBall->GetActorLocation();
@@ -556,6 +561,9 @@ void APlayerPawn::DrawBoolPlayerDebugArrows()
 
 	//Get distance between where we are aiming from and cue ball
 	float InitialArrowDrawDist = FVector::Dist(AimLocation,CueBallLocation);
+
+	//Get old Cueball velocity
+	FVector OldCueBallVelocity = CueBall->GetBallVelocity();
 	if (CueBall->IsValidLowLevel())
 	{
 		if (CanShoot())

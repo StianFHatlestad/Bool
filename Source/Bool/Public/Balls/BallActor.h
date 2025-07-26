@@ -363,9 +363,9 @@ public:
 	UFUNCTION()
 	void ErrorResetVelocities(FString ErrorMessage = "", bool bPrintCallStack = false);
 
-	//Function for rewinding the ball's position and rotation
+	//Function for checking if rewind is possible
 	UFUNCTION(BlueprintCallable)
-	void OnRewind(float DeltaTime, float MoveSpee);
+	bool RewindCheck();
 	////function to get a physics state enum value as a string
 	//FString GetPhysicsStateAsString(EBallPhysicsState InPhysicsState) const;
 

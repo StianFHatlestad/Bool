@@ -34,8 +34,9 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category="BoolData|Turns/Rounds")
 	int CurrentTurn = 1;
 
-	//For rewinding the right data
-	int rewindIndex{-1};
+	//Keeps track of the correct index for rewinding
+	UPROPERTY(BlueprintReadOnly)
+	int rewindIndex{ -1 };
 
 	//whether or not a turn is currently in progress
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
