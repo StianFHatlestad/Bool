@@ -322,6 +322,25 @@ void APlayerPawn::LaunchCueBall()
 
 	//clear the shot delay timer
 	GetWorld()->GetTimerManager().ClearTimer(ShotDelayTimerHandle);
+
+	//Get all the balls on the scene and start record
+	TArray<AActor*> Balls;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABallActor::StaticClass(), Balls);
+	for (AActor* BallActor : Balls)
+	{
+		//check if the ball actor is valid
+		if (BallActor->IsValidLowLevelFast())
+		{
+			//cast the ball actor to a ball actor
+			const TObjectPtr<ABallActor> Ball = Cast<ABallActor>(BallActor);
+			//check if the ball is valid
+			if (Ball->IsValidLowLevel())
+			{
+				//record the ball actor
+				Ball->StartRecordingNewRewindEntry();
+			}
+		}
+	}
 }
 
 void APlayerPawn::ShootCueBall(const FInputActionValue& Value)
@@ -386,8 +405,7 @@ void APlayerPawn::ShootCueBall(const FInputActionValue& Value)
 			}, ShotDelay, false);	
 		}
 
-		//Add to the rewindindex as we are about to shoot
-		GameInstance->rewindIndex ++; //TODO: this makes more sense to be done in the GameInstance class, and also yalla løsning
+	
 	}
 }
 

@@ -175,24 +175,22 @@ void ABallActor::Tick(const float DeltaTime)
 		OldPositions.RemoveAt(0);
 	}
 
-/*
-	//Track the ball movement on every turn
-	if (PreviousPhysicsState == Ebps_Stationary && PhysicsState != Ebps_Stationary)
-	{
-		//add a new position and rotation struct to the history
-		PositionAndRotationHistory.Add(FPositionAndRotationData());
-	}
-*/
+	/*
 	if (PhysicsState != Ebps_Stationary && PositionAndRotationHistory.Num() > 0 )
 	{
 		//add the current position and rotation to the last position and rotation struct
 		PositionAndRotationHistory.Last().AddPositionAndRotation(GetActorLocation(), GetActorRotation());
 	}
+	*/
 
-	//PreviousPhysicsState = PhysicsState;
+	if (bRecordRewindData)
+	{
+		//add the current position and rotation to the last position and rotation struct
+		//The function already compares new entry to last entry, and does not accept duplicate
+		PositionAndRotationHistory.Last().AddPositionAndRotation(GetActorLocation(), GetActorRotation());
+	}
 
-	//Rewinds the ball if the rewind flag is set, this is called in the PlayerPawn class
-
+	//Rewinds the ball if the rewind flag is set
 	if (bIsRewinding)
 	{
 		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5.f, FColor::Red, FString::Printf(TEXT("R-Index %d, HistoryNum: %d"), GameInstance->rewindIndex, PositionAndRotationHistory.Num()));
@@ -348,14 +346,6 @@ void ABallActor::SetBoolPhysicsState(const TEnumAsByte<EBallPhysicsState> NewPhy
 	}
 
 	PhysicsState = NewPhysicsState;
-
-	if (PreviousPhysicsState == Ebps_Stationary && PhysicsState != Ebps_Stationary)
-	{
-		//add a new position and rotation struct to the history
-		PositionAndRotationHistory.Add(FPositionAndRotationData());		
-		//set the new bool physics state
-		PreviousPhysicsState = PhysicsState;
-	}
 }
  
 bool ABallActor::IsOutsideTable() const
@@ -1428,11 +1418,20 @@ bool ABallActor::RewindCheck()
 	if (PositionAndRotationHistory.Last().Positions.Num() == 0)
 	{
 		//return early to prevent further execution
-		
 		bIsRewinding = false;
 		return false;
 	}
 	return true;
+}
+
+void ABallActor::StartRecordingNewRewindEntry()
+{
+	//Increase the rewindIndex
+	GameInstance->rewindIndex+=1;
+
+	//add a new position and rotation struct to the history
+	PositionAndRotationHistory.Add(FPositionAndRotationData());
+	bRecordRewindData = true;
 }
 
 //FString ABallActor::GetPhysicsStateAsString(EBallPhysicsState InPhysicsState) const

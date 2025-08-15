@@ -171,7 +171,7 @@ public:
 	UFUNCTION()
 	void OnTurnEnd();
 
-	//blueprint events
+	//blueprint events 
 
 	//event called when the cue ball is shot
 	UFUNCTION(BlueprintImplementableEvent)
@@ -187,4 +187,5 @@ public:
 	/*
 	UFUNCTION()
 	void DrawBoolPlayerDebugArrows();*/
-};
+};	  
+	  

@@ -38,6 +38,7 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	int rewindIndex{ -1 };
 
+
 	//whether or not a turn is currently in progress
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bTurnInProgress = false;

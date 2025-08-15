@@ -31,8 +31,13 @@ struct FPositionAndRotationData {
 	TArray<FRotator> Rotations;
 	//function to add a position and rotation to the tracker
 
+	//Adds a new entry, checks if the last position and rotation are the same, if so it does not add a new entry
 	void AddPositionAndRotation(const FVector& Position, const FRotator& Rotation)
 	{
+		if (Positions.Num() > 0 && Positions.Last() == Position && Rotations.Last() == Rotation)
+		{
+			return; // Do not add if the last position and rotation are the same
+		}
 		Positions.Add(Position);
 		Rotations.Add(Rotation);
 	}
@@ -74,6 +79,8 @@ public:
 	UPROPERTY(BlueprintReadWrite, Category = "BoolData|Rewind")
 	bool bIsRewinding{ false };
 
+	UPROPERTY(BlueprintReadWrite, Category = "BoolData|Rewind")
+	bool bRecordRewindData{ false };
 	//sphere component for the cue ball
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class USphereComponent* SphereComponent;
@@ -370,6 +377,9 @@ public:
 	//FString GetPhysicsStateAsString(EBallPhysicsState InPhysicsState) const;
 
 	UFUNCTION(BlueprintCallable)
+	void StartRecordingNewRewindEntry();
+	void setbRecordRewindData(bool isRecording) {bRecordRewindData = isRecording;}
+	UFUNCTION(BlueprintCallable)
 	FVector getStructPos()
 	{
 		if (PositionAndRotationHistory.Num() > 0)
@@ -397,3 +407,4 @@ public:
 		}
 	}
 };
+
