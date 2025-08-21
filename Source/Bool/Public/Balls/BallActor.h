@@ -19,6 +19,8 @@ enum EBallPhysicsState
 	Ebps_Sliding,
 };
 
+//much of the physics is copied and modified from https://ekiefl.github.io/2020/04/24/pooltool-theory/
+
 USTRUCT(BlueprintType)
 struct FPositionAndRotationData {
 	GENERATED_BODY()
@@ -63,8 +65,6 @@ struct FPositionAndRotationData {
 	}
 };
 
-//much of the physics is copied and modified from https://ekiefl.github.io/2020/04/24/pooltool-theory/
-
 UCLASS()
 class BOOL_API ABallActor : public AActor
 {
@@ -73,14 +73,6 @@ class BOOL_API ABallActor : public AActor
 public:
 	
 
-	//Container for position and rotation data for rewinding
-	UPROPERTY(BlueprintReadWrite, Category = "BoolData|Rewind")
-	TArray<FPositionAndRotationData> PositionAndRotationHistory;
-	UPROPERTY(BlueprintReadWrite, Category = "BoolData|Rewind")
-	bool bIsRewinding{ false };
-
-	UPROPERTY(BlueprintReadWrite, Category = "BoolData|Rewind")
-	bool bRecordRewindData{ false };
 	//sphere component for the cue ball
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class USphereComponent* SphereComponent;
@@ -370,17 +362,18 @@ public:
 	UFUNCTION()
 	void ErrorResetVelocities(FString ErrorMessage = "", bool bPrintCallStack = false);
 
-	//Function for checking if rewind is possible
+													//#############  Rewind logic ###############################
+		//Container for position and rotation data for rewinding
+	UPROPERTY(BlueprintReadWrite, Category = "BoolData|Rewind")
+	TArray<FPositionAndRotationData> PositionAndRotationHistory;
+
+	//Takes in an index and rewinds the ball through the position and rotation
 	UFUNCTION(BlueprintCallable)
-	bool RewindCheck();
-	////function to get a physics state enum value as a string
-	//FString GetPhysicsStateAsString(EBallPhysicsState InPhysicsState) const;
+	void RewindToIndex(int32 Index);
+	
 
 	UFUNCTION(BlueprintCallable)
-	void StartRecordingNewRewindEntry();
-	void setbRecordRewindData(bool isRecording) {bRecordRewindData = isRecording;}
-	UFUNCTION(BlueprintCallable)
-	FVector getStructPos()
+	FVector getPosFromStruct()
 	{
 		if (PositionAndRotationHistory.Num() > 0)
 		{
@@ -390,7 +383,7 @@ public:
 	}
 
 	UFUNCTION(BlueprintCallable)
-	FRotator getStructRot()
+	FRotator getRorFromStruct()
 	{
 		if (PositionAndRotationHistory.Num() > 0)
 		{
@@ -406,5 +399,11 @@ public:
 			PositionAndRotationHistory.RemoveAt(PositionAndRotationHistory.Num() - 1);
 		}
 	}
+
+	//#################################
+	////function to get a physics state enum value as a string
+	//FString GetPhysicsStateAsString(EBallPhysicsState InPhysicsState) const;
+
+	
 };
 

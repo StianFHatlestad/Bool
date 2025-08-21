@@ -17,7 +17,7 @@
 
 ABallActor::ABallActor()
 {
-	//enable  ing
+	//enableing tick
 	PrimaryActorTick.bCanEverTick = true;
 
 	//create the component(s)
@@ -182,25 +182,6 @@ void ABallActor::Tick(const float DeltaTime)
 		PositionAndRotationHistory.Last().AddPositionAndRotation(GetActorLocation(), GetActorRotation());
 	}
 	*/
-
-	if (bRecordRewindData)
-	{
-		//add the current position and rotation to the last position and rotation struct
-		//The function already compares new entry to last entry, and does not accept duplicate
-		PositionAndRotationHistory.Last().AddPositionAndRotation(GetActorLocation(), GetActorRotation());
-	}
-
-	//Rewinds the ball if the rewind flag is set
-	if (bIsRewinding)
-	{
-		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5.f, FColor::Red, FString::Printf(TEXT("R-Index %d, HistoryNum: %d"), GameInstance->rewindIndex, PositionAndRotationHistory.Num()));
-		if (RewindCheck())
-		{
-			FVector targetLocation = PositionAndRotationHistory[GameInstance->rewindIndex].popLastPos();
-			SetActorLocation(targetLocation);
-		}
-		
-	}
 }
 
 FVector ABallActor::GetBallAngularVelocityVec() const
@@ -1397,42 +1378,23 @@ void ABallActor::ErrorResetVelocities(const FString ErrorMessage, const bool bPr
 	SetBallAngularVelocity(FRotator::ZeroRotator);
 }
 
-
-bool ABallActor::RewindCheck()
+void ABallActor::RewindToIndex(int32 Index)
 {
-	if (!PositionAndRotationHistory.IsValidIndex(GameInstance->rewindIndex))
+	if (PositionAndRotationHistory.IsValidIndex(Index))
 	{
-		bIsRewinding = false;
-		return false;
+		if (PositionAndRotationHistory.Num() > 0)
+		{
+			FPositionAndRotationData& Data = PositionAndRotationHistory[Index];
+			if (Data.Positions.Num() > 0 && Data.Rotations.Num() > 0)
+			{
+				SetActorLocation(Data.popLastPos());
+				SetActorRotation(Data.popLastRot());
+			}
+		}
 	}
-
-	//check if the ball has a position and rotation history
-	if (PositionAndRotationHistory.IsEmpty())
-	{
-		//return early to prevent further execution
-		bIsRewinding = false;
-		return false;
-	} 
-
-	//Check if the vector holding the positions is not empty
-	if (PositionAndRotationHistory.Last().Positions.Num() == 0)
-	{
-		//return early to prevent further execution
-		bIsRewinding = false;
-		return false;
-	}
-	return true;
 }
 
-void ABallActor::StartRecordingNewRewindEntry()
-{
-	//Increase the rewindIndex
-	GameInstance->rewindIndex+=1;
 
-	//add a new position and rotation struct to the history
-	PositionAndRotationHistory.Add(FPositionAndRotationData());
-	bRecordRewindData = true;
-}
 
 //FString ABallActor::GetPhysicsStateAsString(EBallPhysicsState InPhysicsState) const
 //{

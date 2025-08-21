@@ -7,6 +7,7 @@
 #include "InputMappingContext.h"
 #include "InputAction.h"
 #include "Bool/GoalActor.h"
+#include "Timelord.h"
 #include "PlayerPawn.generated.h"
 
 class ABallActor;
@@ -128,6 +129,8 @@ public:
 	UPROPERTY()
 	FTimerHandle ShotDelayTimerHandle;
 
+	//Rewind Controller
+	TObjectPtr<ATimelord> RewindController = nullptr;
 	//constructor(s)
 	APlayerPawn();
 
@@ -181,9 +184,10 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnTurnEndBP();
 
-	//Event called when the player wants to rewind the game. Currently only rewinds ball positions. TODO: finish and implement as button on UI
-	UFUNCTION()
-	void StartRewind();
+
+	//Initiate rewind
+	UFUNCTION(BlueprintCallable)
+	void Rewind();
 	/*
 	UFUNCTION()
 	void DrawBoolPlayerDebugArrows();*/
