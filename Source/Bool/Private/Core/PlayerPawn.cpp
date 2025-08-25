@@ -553,7 +553,7 @@ void APlayerPawn::Rewind()
 	}
 	//call the start rewind function of the game instance
 
-	->StartRewind();
+	RewindController->startRewind();
 }
 
 /* TODO: finish translation from blueprint to C++ code
