@@ -130,7 +130,7 @@ public:
 	FTimerHandle ShotDelayTimerHandle;
 
 	//Rewind Controller
-	TObjectPtr<ATimelord> RewindController = nullptr;
+	TObjectPtr<ATimelord> RewindController{ nullptr };
 	//constructor(s)
 	APlayerPawn();
 

@@ -51,6 +51,19 @@ void APlayerPawn::BeginPlay()
 
 	//set the player controller
 	PlayerController = CastChecked<APlayerController>(GetController());
+	//TODO: optimize this, currently does not work
+	//Get the timelord(rewind controller) actor in the level
+	TArray<AActor*> rewindSceneRef;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ATimelord::StaticClass(), rewindSceneRef);
+
+	if (rewindSceneRef.IsEmpty())
+		{
+		//print a debug message
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("No Rewind Controller Found"));
+	}
+
+	if (!(rewindSceneRef.IsEmpty()) && rewindSceneRef[0]->IsValidLowLevel())
+		RewindController = Cast<ATimelord>(rewindSceneRef[0]);
 
 	//get the cue balls in the level
 	TArray<AActor*> CueBalls;
@@ -75,13 +88,7 @@ void APlayerPawn::BeginPlay()
 	//get the game instance
 	GameInstance = Cast<UBoolGameInstance>(UGameplayStatics::GetGameInstance(this));
 
-	//Get the timelord(rewind controller) actor in the level
-
-	AActor* rewindref = UGameplayStatics::GetActorOfClass(GetWorld(), ATimelord::StaticClass());
-	if (rewindref->IsValidLowLevel())
-		RewindController = Cast<ATimelord>(rewindref);
-
-	
+		
 	//temporary storage for the ball actors in the level
 	TArray<AActor*> LocBallActors;
 
@@ -107,6 +114,8 @@ void APlayerPawn::Tick(const float DeltaTime)
 {
 	//call the parent implementation
 	Super::Tick(DeltaTime);
+
+	
 
 	//check if we don't have a valid cue ball
 	if (!CueBall->IsValidLowLevelFast())
@@ -312,13 +321,15 @@ bool APlayerPawn::CanShoot() const
 
 void APlayerPawn::LaunchCueBall()
 {
+	if (RewindController->IsValidLowLevel())
+		RewindController->CreateNewEntry();
+
 	//get the current shot speed
 	float LocCurrentShotSpeed = FMath::Clamp(FVector::Dist(CueBall->GetActorLocation(), GetMouseWorldPosition()) * ShotSpeedMultiplier, MinimumShootingSpeed, MaxShootingSpeed);
 
 	//shoot the cue ball at the position
 	ShootCueBallAtPosition(FireDir * LocCurrentShotSpeed);
 
-	//set turn in progress to true
 	GameInstance->bTurnInProgress = true;
 
 	//set the next available turn time
@@ -380,8 +391,9 @@ void APlayerPawn::ShootCueBall(const FInputActionValue& Value)
 		//check if the shot delay is less than or equal to zero
 		if (ShotDelay <= 0)
 		{
-			//launch the cue ball immediately
+		//launch the cue ball immediately
 			LaunchCueBall();
+			
 		}
 		else
 		{
@@ -543,6 +555,7 @@ void APlayerPawn::OnTurnEnd()
 
 void APlayerPawn::Rewind()
 {
+	
 	//check if the game instance is not valid
 	if (!GameInstance->IsValidLowLevel())
 	{
@@ -554,6 +567,7 @@ void APlayerPawn::Rewind()
 	//call the start rewind function of the game instance
 
 	RewindController->startRewind();
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("rewind initiated"));
 }
 
 /* TODO: finish translation from blueprint to C++ code

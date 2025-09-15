@@ -52,10 +52,10 @@ public:
 
 	//Keeps track of the correct index for rewinding
 	UPROPERTY(BlueprintReadOnly)
-	int rewindIndex{ -1 };
+	int rewindIndex{ 0 };
 
-	//Rewind flag, if true, the balls rewind
-	bool bIsRewinding = false;
+	//Whether or not the timelord is currently rewinding
+	bool bIsRecording = false;
 
 	// Reference to the game instance
 	UPROPERTY()

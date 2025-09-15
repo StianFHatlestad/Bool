@@ -25,6 +25,7 @@ void ATimelord::BeginPlay()
 	//Get the game instance
 	GameInstance = Cast<UBoolGameInstance>(UGameplayStatics::GetGameInstance(this));
 }
+
 void ATimelord::Tick(float DeltaTime)
 {
 	
@@ -34,20 +35,23 @@ void ATimelord::Tick(float DeltaTime)
 	if (GameInstance->IsValidLowLevel())
 	{
 		if (GameInstance->bTurnInProgress)
-		{
-			//Create new entry for rewind history
-			CreateNewEntry();
+		{ 
+			//Start recording, new entry created in playerpawn when turn starts
+			bIsRecording = true;
 		}
-		while (GameInstance->bTurnInProgress)
+		else
+		{
+			bIsRecording = false;
+		}
+
+		if (bIsRecording)
 		{
 			RecordPosAndRot();
-		}		
+			GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5.f, FColor::White, "reeeeecording");
+
+		}
 	}
 
-	while (bIsRewinding)
-	{
-		startRewind();
-	}
 	/*
 	if (bRecordRewindData)
 	{
@@ -72,7 +76,7 @@ void ATimelord::Tick(float DeltaTime)
 //TODO: implement this porperly in the UI
 void ATimelord::startRewind()
 {
-	
+	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5.f, FColor::Red, "start rewind() ");
 	//Get all the balls on the scene
 	TArray<AActor*> Balls;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABallActor::StaticClass(), Balls);
@@ -93,7 +97,7 @@ void ATimelord::CreateNewEntry()
 {
 	
 	//Increase the rewindIndex
-	rewindIndex += 1;
+	//rewindIndex += 1;
 
 	//Get all the balls on the scene
 	TArray<AActor*> Balls;
@@ -107,6 +111,8 @@ void ATimelord::CreateNewEntry()
 		{
 			//add a new position and rotation struct to the history
 			Ball->PositionAndRotationHistory.Add(FPositionAndRotationData());
+
+			GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5.f, FColor::Green, "New entry added");
 		}
 	}
 }
@@ -123,8 +129,9 @@ void ATimelord::RecordPosAndRot()
 
 		if (Ball->IsValidLowLevel())
 		{
-			//add the current position and rotation to the last position and rotation struct
-			Ball->PositionAndRotationHistory.Last().AddPositionAndRotation(Ball->GetActorLocation(), Ball->GetActorRotation());
+			if (Ball->PositionAndRotationHistory.Num() > 0)
+				//add the current position and rotation to the last position and rotation struct
+				Ball->PositionAndRotationHistory.Last().AddPositionAndRotation(Ball->GetActorLocation(), Ball->GetActorRotation());
 		}
 	}
 }

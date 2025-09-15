@@ -1372,7 +1372,7 @@ void ABallActor::ErrorResetVelocities(const FString ErrorMessage, const bool bPr
 	}
 
 	//set our velocity to zero
-	SetBallVelocity(FVector::ZeroVector);
+	SetBallVelocity(FVector::ZeroVector); 
 
 	//set our angular velocity to zero
 	SetBallAngularVelocity(FRotator::ZeroRotator);
@@ -1385,13 +1385,19 @@ void ABallActor::RewindToIndex(int32 Index)
 		if (PositionAndRotationHistory.Num() > 0)
 		{
 			FPositionAndRotationData& Data = PositionAndRotationHistory[Index];
+			
 			if (Data.Positions.Num() > 0 && Data.Rotations.Num() > 0)
 			{
-				SetActorLocation(Data.popLastPos());
-				SetActorRotation(Data.popLastRot());
+				for (int i = 0; i < Data.Positions.Num(); i++)
+				{
+					SetActorLocation(FMath::Lerp(GetActorLocation(), Data.popLastPos(), 1.0f));
+					SetActorRotation(FMath::Lerp(GetActorRotation(), Data.popLastRot(), 1.0f));
+					GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5.f, FColor::Red, "Bitch rewinding");
+				}
 			}
 		}
 	}
+	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5.f, FColor::Red, "Cannot rewind");
 }
 
 
