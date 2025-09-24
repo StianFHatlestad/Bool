@@ -134,7 +134,7 @@ void ATimelord::RecordPosAndRot()
 				Ball->PositionAndRotationHistory.Last().AddPositionAndRotation(Ball->GetActorLocation(), Ball->GetActorRotation());
 		}
 	}
-}
+}	
 
 bool ATimelord::RewindCheck(ABallActor* Ball)
 {

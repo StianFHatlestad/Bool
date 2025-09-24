@@ -1390,8 +1390,10 @@ void ABallActor::RewindToIndex(int32 Index)
 			{
 				for (int i = 0; i < Data.Positions.Num(); i++)
 				{
-					SetActorLocation(FMath::Lerp(GetActorLocation(), Data.popLastPos(), 1.0f));
-					SetActorRotation(FMath::Lerp(GetActorRotation(), Data.popLastRot(), 1.0f));
+					 //SetActorLocation(FMath::Lerp(GetActorLocation(), Data.popLastPos(), 1.0f));
+					//SetActorRotation(FMath::Lerp(GetActorRotation(), Data.popLastRot(), 1.0f));
+					SetActorLocation(Data.popLastPos());
+					SetActorRotation(Data.popLastRot());
 					GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5.f, FColor::Red, "Bitch rewinding");
 				}
 			}
