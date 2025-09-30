@@ -50,8 +50,11 @@ void ATimelord::Tick(float DeltaTime)
 			GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5.f, FColor::White, "reeeeecording");
 
 		}
+
 	}
 
+	
+	
 	/*
 	if (bRecordRewindData)
 	{
@@ -76,21 +79,23 @@ void ATimelord::Tick(float DeltaTime)
 //TODO: implement this porperly in the UI
 void ATimelord::startRewind()
 {
+
 	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5.f, FColor::Red, "start rewind() ");
 	//Get all the balls on the scene
 	TArray<AActor*> Balls;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABallActor::StaticClass(), Balls);
-
+	size_t positionIndex = 0;
 	for (AActor* BallActor : Balls)
 	{
-		//cast the ball actor to a ball actor
+		//cast the ball actor to ABallActor
 		const TObjectPtr<ABallActor> Ball = Cast<ABallActor>(BallActor);
 		//check if the ball is valid
 		if (Ball->IsValidLowLevel())
 		{
-			Ball->RewindToIndex(rewindIndex);
+			Ball->RewindToIndex(rewindIndex, positionIndex);
 		}
 	}
+	positionIndex++;
 }
 
 void ATimelord::CreateNewEntry()
@@ -134,7 +139,13 @@ void ATimelord::RecordPosAndRot()
 				Ball->PositionAndRotationHistory.Last().AddPositionAndRotation(Ball->GetActorLocation(), Ball->GetActorRotation());
 		}
 	}
-}	
+}
+
+void ATimelord::turnOnRewinding()
+{
+	ibIsRewinding = true;
+	
+}
 
 bool ATimelord::RewindCheck(ABallActor* Ball)
 {

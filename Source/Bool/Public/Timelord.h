@@ -48,15 +48,19 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void RecordPosAndRot();
 
+	//starts the rewinding process
+	void turnOnRewinding();
 	
 
 	//Keeps track of the correct index for rewinding
 	UPROPERTY(BlueprintReadOnly)
 	int rewindIndex{ 0 };
 
-	//Whether or not the timelord is currently rewinding
-	bool bIsRecording = false;
+	//Whether or not the timelord is currently recording
+	bool bIsRecording{false};
 
+	//Whether or not the timelord is currently rewinding
+	bool ibIsRewinding{false};
 	// Reference to the game instance
 	UPROPERTY()
 	TObjectPtr<UBoolGameInstance> GameInstance = nullptr;

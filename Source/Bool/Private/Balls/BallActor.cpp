@@ -1378,7 +1378,7 @@ void ABallActor::ErrorResetVelocities(const FString ErrorMessage, const bool bPr
 	SetBallAngularVelocity(FRotator::ZeroRotator);
 }
 
-void ABallActor::RewindToIndex(int32 Index)
+void ABallActor::RewindToIndex(int32 Index,int32 positionIndex)
 {
 	if (PositionAndRotationHistory.IsValidIndex(Index))
 	{
@@ -1388,14 +1388,17 @@ void ABallActor::RewindToIndex(int32 Index)
 			
 			if (Data.Positions.Num() > 0 && Data.Rotations.Num() > 0)
 			{
-				for (int i = 0; i < Data.Positions.Num(); i++)
+				SetActorLocation(Data.Positions[positionIndex]);
+				//SetActorRotation(Data.Rotations[0]);
+				/*for (int i = 0; i < Data.Positions.Num(); i++)
 				{
 					 //SetActorLocation(FMath::Lerp(GetActorLocation(), Data.popLastPos(), 1.0f));
 					//SetActorRotation(FMath::Lerp(GetActorRotation(), Data.popLastRot(), 1.0f));
 					SetActorLocation(Data.popLastPos());
 					SetActorRotation(Data.popLastRot());
 					GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5.f, FColor::Red, "Bitch rewinding");
-				}
+
+									}*/
 			}
 		}
 	}

@@ -369,7 +369,7 @@ public:
 
 	//Takes in an index and rewinds the ball through the position and rotation
 	UFUNCTION(BlueprintCallable)
-	void RewindToIndex(int32 Index);
+	void RewindToIndex(int32 Index, int32 positionIndex);
 	
 
 	UFUNCTION(BlueprintCallable)

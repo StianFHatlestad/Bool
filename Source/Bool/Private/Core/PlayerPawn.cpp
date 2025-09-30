@@ -192,6 +192,10 @@ void APlayerPawn::Tick(const float DeltaTime)
 		//set turn in progress to false
 		GameInstance->bTurnInProgress = false;
 	}
+
+	
+
+
 }
 
 void APlayerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -566,6 +570,8 @@ void APlayerPawn::Rewind()
 	}
 	//call the start rewind function of the game instance
 
+
+	RewindController->turnOnRewinding();
 	RewindController->startRewind();
 	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("rewind initiated"));
 }
