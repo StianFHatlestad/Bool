@@ -182,6 +182,27 @@ void ABallActor::Tick(const float DeltaTime)
 		PositionAndRotationHistory.Last().AddPositionAndRotation(GetActorLocation(), GetActorRotation());
 	}
 	*/
+
+	/*************************  Rewind Logic **************************************/
+	if (GameInstance->bTurnInProgress)
+	{
+		TurnOnRecording();
+	}else
+	{
+		TurnOfRecording();
+	}
+
+
+	if (IsRecording)
+	{
+		RecordBallPositionAndRotation();
+		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5.f, FColor::White, "reeeeecording");
+	}
+
+	if (IsRewinding && !GameInstance->bTurnInProgress)
+	{
+		RewindToIndex();
+	}
 }
 
 FVector ABallActor::GetBallAngularVelocityVec() const
@@ -1378,33 +1399,50 @@ void ABallActor::ErrorResetVelocities(const FString ErrorMessage, const bool bPr
 	SetBallAngularVelocity(FRotator::ZeroRotator);
 }
 
-void ABallActor::RewindToIndex(int32 Index,int32 positionIndex)
+void ABallActor::RewindToIndex()
 {
-	if (PositionAndRotationHistory.IsValidIndex(Index))
+	if (!PositionAndRotationHistory.IsValidIndex(rewindIndex))
 	{
-		if (PositionAndRotationHistory.Num() > 0)
+		if (!PositionAndRotationHistory[rewindIndex].Positions.IsEmpty())
 		{
-			FPositionAndRotationData& Data = PositionAndRotationHistory[Index];
-			
+			FPositionAndRotationData& Data = PositionAndRotationHistory[rewindIndex];
+
 			if (Data.Positions.Num() > 0 && Data.Rotations.Num() > 0)
 			{
-				SetActorLocation(Data.Positions[positionIndex]);
-				//SetActorRotation(Data.Rotations[0]);
-				/*for (int i = 0; i < Data.Positions.Num(); i++)
-				{
-					 //SetActorLocation(FMath::Lerp(GetActorLocation(), Data.popLastPos(), 1.0f));
-					//SetActorRotation(FMath::Lerp(GetActorRotation(), Data.popLastRot(), 1.0f));
-					SetActorLocation(Data.popLastPos());
-					SetActorRotation(Data.popLastRot());
-					GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5.f, FColor::Red, "Bitch rewinding");
-
-									}*/
+				SetActorLocation(Data.popLastPos());
+				return;
 			}
 		}
 	}
-	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5.f, FColor::Red, "Cannot rewind");
+	TurnOfRewinding();
+	rewindIndex--;
 }
 
+void ABallActor::RecordBallPosition()
+{
+	if (PositionAndRotationHistory.Num() > 0)
+		PositionAndRotationHistory.Last().AddNewPosition(GetActorLocation());
+}
+
+void ABallActor::RecordBallRotation()
+{
+	if (PositionAndRotationHistory.Num() > 0)
+		PositionAndRotationHistory.Last().AddNewRotation(GetActorRotation());
+}
+
+void ABallActor::RecordBallPositionAndRotation()
+{
+	RecordBallPosition();
+	RecordBallRotation();
+}
+
+void ABallActor::CreateNewEntry()
+{
+	rewindIndex++;
+
+	PositionAndRotationHistory.Add(FPositionAndRotationData{});
+	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5.f, FColor::Green, "New entry added ");
+}
 
 
 //FString ABallActor::GetPhysicsStateAsString(EBallPhysicsState InPhysicsState) const

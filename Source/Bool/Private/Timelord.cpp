@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ // Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "Timelord.h"
@@ -48,54 +48,18 @@ void ATimelord::Tick(float DeltaTime)
 		{
 			RecordPosAndRot();
 			GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5.f, FColor::White, "reeeeecording");
-
 		}
-
 	}
 
 	
-	
-	/*
-	if (bRecordRewindData)
-	{
-		//add the current position and rotation to the last position and rotation struct
-		//The function already compares new entry to last entry, and does not accept duplicate
-		PositionAndRotationHistory.Last().AddPositionAndRotation(GetActorLocation(), GetActorRotation());
-	}
 
-	//Rewinds the ball if the rewind flag is set
-	if (bIsRewinding)
-	{
-		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5.f, FColor::Red, FString::Printf(TEXT("R-Index %d, HistoryNum: %d"), GameInstance->rewindIndex, PositionAndRotationHistory.Num()));
-		if (RewindCheck())
-		{
-			FVector targetLocation = PositionAndRotationHistory[GameInstance->rewindIndex].popLastPos();
-			SetActorLocation(targetLocation);
-		}
-
-	}*/
 }
 
 //TODO: implement this porperly in the UI
 void ATimelord::startRewind()
 {
 
-	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5.f, FColor::Red, "start rewind() ");
-	//Get all the balls on the scene
-	TArray<AActor*> Balls;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABallActor::StaticClass(), Balls);
-	size_t positionIndex = 0;
-	for (AActor* BallActor : Balls)
-	{
-		//cast the ball actor to ABallActor
-		const TObjectPtr<ABallActor> Ball = Cast<ABallActor>(BallActor);
-		//check if the ball is valid
-		if (Ball->IsValidLowLevel())
-		{
-			Ball->RewindToIndex(rewindIndex, positionIndex);
-		}
-	}
-	positionIndex++;
+	//maybe not needed
 }
 
 void ATimelord::CreateNewEntry()
@@ -124,27 +88,32 @@ void ATimelord::CreateNewEntry()
 
 void ATimelord::RecordPosAndRot()
 {
-	TArray<AActor*> Balls;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABallActor::StaticClass(), Balls);
-
-	for (AActor* BallActor : Balls)
-	{
-		//cast the ball actor to a ball actor
-		const TObjectPtr<ABallActor> Ball = Cast<ABallActor>(BallActor);
-
-		if (Ball->IsValidLowLevel())
-		{
-			if (Ball->PositionAndRotationHistory.Num() > 0)
-				//add the current position and rotation to the last position and rotation struct
-				Ball->PositionAndRotationHistory.Last().AddPositionAndRotation(Ball->GetActorLocation(), Ball->GetActorRotation());
-		}
-	}
+	/// TODO:remove
 }
 
 void ATimelord::turnOnRewinding()
 {
-	ibIsRewinding = true;
+	bIsRewinding = true;
 	
+}
+
+void ATimelord::rewinding()
+{/*
+	TArray<AActor*> Balls;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABallActor::StaticClass(), Balls);
+	if (bIsRewinding)
+	{
+		for (AActor* BallActor : Balls)
+		{
+			//cast the ball actor to a ball actor
+			const TObjectPtr<ABallActor> Ball = Cast<ABallActor>(BallActor);
+			if (Ball->RewindToIndex(rewindIndex, posIndex))
+			{
+				GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5.f, FColor::green, "Rewinding");
+			}
+		}
+		bIsRewinding = false;
+	}*/
 }
 
 bool ATimelord::RewindCheck(ABallActor* Ball)

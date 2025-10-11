@@ -31,18 +31,30 @@ struct FPositionAndRotationData {
 	//storage for the rotations of the ball
 	UPROPERTY(BlueprintReadWrite)
 	TArray<FRotator> Rotations;
-	//function to add a position and rotation to the tracker
 
-	//Adds a new entry, checks if the last position and rotation are the same, if so it does not add a new entry
-	void AddPositionAndRotation(const FVector& Position, const FRotator& Rotation)
+	/// <summary>
+	/// Adds new entry to history of rotations, avoiding duplicates
+	/// </summary>
+	/// <param name="rot">rotation vector (pitch,yaw,roll)</param>
+	void AddNewRotation(const FRotator& rot)
 	{
-		if (Positions.Num() > 0 && Positions.Last() == Position && Rotations.Last() == Rotation)
-		{
-			return; // Do not add if the last position and rotation are the same
-		}
-		Positions.Add(Position);
-		Rotations.Add(Rotation);
+		if (Rotations.Num() > 0 && Rotations.Last() == rot)
+			return; //Prevent duplicates
+		Rotations.Add(rot);
+
 	}
+
+	/// <summary>
+	/// Adds new entry to history of positions, avoiding duplicates
+	/// </summary>
+	/// <param name="pos"> xyz position vector</param>
+	void AddNewPosition(const FVector& pos)
+	{
+		if (Positions.Num() > 0 && Positions.Last() == pos)
+			return; //Prevent duplicates
+		Positions.Add(pos);
+	}
+
 	//returns the last position and removes it from the array
 	FVector popLastPos() {
 		if (Positions.Num() > 0)
@@ -53,6 +65,7 @@ struct FPositionAndRotationData {
 		}
 		return FVector::ZeroVector;
 	}
+
 	//Returns the last rotation and removes it from the array
 	FRotator popLastRot() {
 		if (Rotations.Num() > 0)
@@ -367,10 +380,65 @@ public:
 	UPROPERTY(BlueprintReadWrite, Category = "BoolData|Rewind")
 	TArray<FPositionAndRotationData> PositionAndRotationHistory;
 
+	/// <summary>
+	/// Tells if the ball is currently rewinding. (Read only variable)
+	/// </summary>
+	UPROPERTY(BlueprintReadOnly)
+	bool IsRewinding{ false };
+
+	/// <summary>
+	/// Tells if the ball is currently recording. (Read only variable)
+	/// </summary>
+	UPROPERTY(BlueprintReadOnly)
+	bool IsRecording{ false };
+
+
+	//What index in the history to draw from when rewinding
+	UPROPERTY(BlueprintReadOnly)
+	int rewindIndex{ -1 };
 	//Takes in an index and rewinds the ball through the position and rotation
 	UFUNCTION(BlueprintCallable)
-	void RewindToIndex(int32 Index, int32 positionIndex);
+	void RewindToIndex();
 	
+	/// <summary>
+	/// Record the ball position
+	/// </summary>
+	UFUNCTION(BlueprintCallable)
+	void RecordBallPosition();
+
+	/// <summary>
+	/// Record ball rotation
+	/// </summary>
+	UFUNCTION(BlueprintCallable)
+	void RecordBallRotation();
+
+	/// <summary>
+	/// Record ball position and rotation
+	/// </summary>
+	UFUNCTION(BlueprintCallable)
+	void RecordBallPositionAndRotation();
+
+	// Start recording
+	UFUNCTION(BlueprintCallable)
+	void TurnOnRecording() { IsRecording = true; }
+
+	//Stop recording
+	UFUNCTION(BlueprintCallable)
+	void TurnOfRecording() { IsRecording = false; }
+
+	//Start rewinding
+	UFUNCTION(BlueprintCallable)
+	void TurnOnRewinding() { IsRewinding = true; }
+
+	//Stop rewinding
+	UFUNCTION(BlueprintCallable)
+	void TurnOfRewinding() { IsRewinding = false; }
+
+	/// <summary>
+	/// Creates new entry in history of rewinding objects
+	/// </summary>'
+	UFUNCTION(BlueprintCallable)
+	void CreateNewEntry();
 
 	UFUNCTION(BlueprintCallable)
 	FVector getPosFromStruct()

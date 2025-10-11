@@ -62,9 +62,6 @@ void APlayerPawn::BeginPlay()
 		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("No Rewind Controller Found"));
 	}
 
-	if (!(rewindSceneRef.IsEmpty()) && rewindSceneRef[0]->IsValidLowLevel())
-		RewindController = Cast<ATimelord>(rewindSceneRef[0]);
-
 	//get the cue balls in the level
 	TArray<AActor*> CueBalls;
 	UGameplayStatics::GetAllActorsOfClassWithTag(GetWorld(), ABallActor::StaticClass(), CueBallTag, CueBalls);
@@ -325,8 +322,21 @@ bool APlayerPawn::CanShoot() const
 
 void APlayerPawn::LaunchCueBall()
 {
-	if (RewindController->IsValidLowLevel())
-		RewindController->CreateNewEntry();
+	///Creates a new objects to contain rewinding data and increases RewindIndex to that entry
+	//Get all the balls on the scene
+	TArray<AActor*> Balls;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABallActor::StaticClass(), Balls);
+
+	for (AActor* BallActor : Balls)
+	{
+		//cast the ball actor to a ball actor
+		const TObjectPtr<ABallActor> Ball = Cast<ABallActor>(BallActor);
+		if (Ball->IsValidLowLevel())
+		{
+			//add a new position and rotation struct to the history
+			Ball->CreateNewEntry();
+		}
+	}
 
 	//get the current shot speed
 	float LocCurrentShotSpeed = FMath::Clamp(FVector::Dist(CueBall->GetActorLocation(), GetMouseWorldPosition()) * ShotSpeedMultiplier, MinimumShootingSpeed, MaxShootingSpeed);
@@ -568,11 +578,20 @@ void APlayerPawn::Rewind()
 		//return early to prevent further execution
 		return;
 	}
-	//call the start rewind function of the game instance
+	//Get all the balls on the scene
+	TArray<AActor*> Balls;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABallActor::StaticClass(), Balls);
 
-
-	RewindController->turnOnRewinding();
-	RewindController->startRewind();
+	for (AActor* BallActor : Balls)
+	{
+		//cast the ball actor to a ball actor
+		const TObjectPtr<ABallActor> Ball = Cast<ABallActor>(BallActor);
+		if (Ball->IsValidLowLevel())
+		{
+			// Switches on rewinding.
+			Ball->TurnOnRewinding();
+		}
+	}
 	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("rewind initiated"));
 }
 

@@ -129,8 +129,6 @@ public:
 	UPROPERTY()
 	FTimerHandle ShotDelayTimerHandle;
 
-	//Rewind Controller
-	TObjectPtr<ATimelord> RewindController{ nullptr };
 	//constructor(s)
 	APlayerPawn();
 
