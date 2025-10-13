@@ -21,12 +21,70 @@ enum EBallPhysicsState
 
 //much of the physics is copied and modified from https://ekiefl.github.io/2020/04/24/pooltool-theory/
 
+USTRUCT(BlueprintType)
+struct FPositionAndRotationData {
+	GENERATED_BODY()
+
+	//storage for the positions of the ball
+	UPROPERTY(BlueprintReadWrite)
+	TArray<FVector> Positions;
+	//storage for the rotations of the ball
+	UPROPERTY(BlueprintReadWrite)
+	TArray<FRotator> Rotations;
+
+	/// <summary>
+	/// Adds new entry to history of rotations, avoiding duplicates
+	/// </summary>
+	/// <param name="rot">rotation vector (pitch,yaw,roll)</param>
+	void AddNewRotation(const FRotator& rot)
+	{
+		if (Rotations.Num() > 0 && Rotations.Last() == rot)
+			return; //Prevent duplicates
+		Rotations.Add(rot);
+
+	}
+
+	/// <summary>
+	/// Adds new entry to history of positions, avoiding duplicates
+	/// </summary>
+	/// <param name="pos"> xyz position vector</param>
+	void AddNewPosition(const FVector& pos)
+	{
+		if (Positions.Num() > 0 && Positions.Last() == pos)
+			return; //Prevent duplicates
+		Positions.Add(pos);
+	}
+
+	//returns the last position and removes it from the array
+	FVector popLastPos() {
+		if (Positions.Num() > 0)
+		{
+			FVector LastPos = Positions.Last();
+			Positions.RemoveAt(Positions.Num() - 1);
+			return LastPos;
+		}
+		return FVector::ZeroVector;
+	}
+
+	//Returns the last rotation and removes it from the array
+	FRotator popLastRot() {
+		if (Rotations.Num() > 0)
+		{
+			FRotator LastRot = Rotations.Last();
+			Rotations.RemoveAt(Rotations.Num() - 1);
+			return LastRot;
+		}
+		return FRotator::ZeroRotator;
+	}
+};
+
 UCLASS()
 class BOOL_API ABallActor : public AActor
 {
 	GENERATED_BODY()
 	
 public:
+	
 
 	//sphere component for the cue ball
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
@@ -140,6 +198,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BoolData|Physics")
 	TEnumAsByte<EBallPhysicsState> PhysicsState = Ebps_Stationary;
 
+	//The previous physics state of the ball, used for comparison
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BoolData|Physics")
+	TEnumAsByte<EBallPhysicsState> PreviousPhysicsState = Ebps_Stationary;
 	////the spinning friction coefficient of the table
 	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData|Physics|Spinning")
 	//float TableSpinningFrictionCoefficient = 0.6;
@@ -314,6 +375,103 @@ public:
 	UFUNCTION()
 	void ErrorResetVelocities(FString ErrorMessage = "", bool bPrintCallStack = false);
 
+													//#############  Rewind logic ###############################
+		//Container for position and rotation data for rewinding
+	UPROPERTY(BlueprintReadWrite, Category = "BoolData|Rewind")
+	TArray<FPositionAndRotationData> PositionAndRotationHistory;
+
+	/// <summary>
+	/// Tells if the ball is currently rewinding. (Read only variable)
+	/// </summary>
+	UPROPERTY(BlueprintReadOnly)
+	bool IsRewinding{ false };
+
+	/// <summary>
+	/// Tells if the ball is currently recording. (Read only variable)
+	/// </summary>
+	UPROPERTY(BlueprintReadOnly)
+	bool IsRecording{ false };
+
+
+	//What index in the history to draw from when rewinding
+	UPROPERTY(BlueprintReadOnly)
+	int rewindIndex{ -1 };
+	//Takes in an index and rewinds the ball through the position and rotation
+	UFUNCTION(BlueprintCallable)
+	void RewindToIndex();
+	
+	/// <summary>
+	/// Record the ball position
+	/// </summary>
+	UFUNCTION(BlueprintCallable)
+	void RecordBallPosition();
+
+	/// <summary>
+	/// Record ball rotation
+	/// </summary>
+	UFUNCTION(BlueprintCallable)
+	void RecordBallRotation();
+
+	/// <summary>
+	/// Record ball position and rotation
+	/// </summary>
+	UFUNCTION(BlueprintCallable)
+	void RecordBallPositionAndRotation();
+
+	// Start recording
+	UFUNCTION(BlueprintCallable)
+	void TurnOnRecording() { IsRecording = true; }
+
+	//Stop recording
+	UFUNCTION(BlueprintCallable)
+	void TurnOfRecording() { IsRecording = false; }
+
+	//Start rewinding
+	UFUNCTION(BlueprintCallable)
+	void TurnOnRewinding() { IsRewinding = true; }
+
+	//Stop rewinding
+	UFUNCTION(BlueprintCallable)
+	void TurnOfRewinding() { IsRewinding = false; }
+
+	/// <summary>
+	/// Creates new entry in history of rewinding objects
+	/// </summary>'
+	UFUNCTION(BlueprintCallable)
+	void CreateNewEntry();
+
+	UFUNCTION(BlueprintCallable)
+	FVector getPosFromStruct()
+	{
+		if (PositionAndRotationHistory.Num() > 0)
+		{
+			return PositionAndRotationHistory.Last().popLastPos();
+		}
+		return FVector::ZeroVector;
+	}
+
+	UFUNCTION(BlueprintCallable)
+	FRotator getRorFromStruct()
+	{
+		if (PositionAndRotationHistory.Num() > 0)
+		{
+			return PositionAndRotationHistory.Last().popLastRot();
+		}
+		return FRotator::ZeroRotator;
+	}
+	UFUNCTION(BlueprintCallable)
+	void removeLastItemFromPosHistory()
+	{
+		if (PositionAndRotationHistory.Num() > 0)
+		{
+			PositionAndRotationHistory.RemoveAt(PositionAndRotationHistory.Num() - 1);
+		}
+	}
+
+	//#################################
 	////function to get a physics state enum value as a string
 	//FString GetPhysicsStateAsString(EBallPhysicsState InPhysicsState) const;
+
+	
 };
+
