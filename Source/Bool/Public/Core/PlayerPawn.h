@@ -7,6 +7,7 @@
 #include "InputMappingContext.h"
 #include "InputAction.h"
 #include "Bool/GoalActor.h"
+#include "Timelord.h"
 #include "PlayerPawn.generated.h"
 
 class ABallActor;
@@ -21,7 +22,17 @@ public:
 	//the camera component for this pawn
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<class UCameraComponent> CameraComponent = nullptr;
+	/*
+	//Niagara particle system component for visual effects
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<class UNiagaraComponent> NS_AimingRing{nullptr};
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<class UNiagaraComponent> NS_AimingLine{ nullptr };
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<class UNiagaraComponent> NS_AimingLineBounces{ nullptr };
+	*/
 	//the current cue ball we're using
 	UPROPERTY(BlueprintReadWrite)
 	TObjectPtr<ABallActor> CueBall = nullptr;
@@ -41,6 +52,10 @@ public:
 	//the input action for shooting the ball
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Inputsystem")
 	TObjectPtr<UInputAction> IA_Shoot = nullptr;
+
+	//the input action for rewind. TODO: remove this and make it a button on UI
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Inputsystem")
+	TObjectPtr<UInputAction> IA_Rewind = nullptr;
 
 	//toggle for whether the player fires the ball in the direction of the mouse cursor or the opposite direction
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BoolData")
@@ -157,7 +172,7 @@ public:
 	UFUNCTION()
 	void OnTurnEnd();
 
-	//blueprint events
+	//blueprint events 
 
 	//event called when the cue ball is shot
 	UFUNCTION(BlueprintImplementableEvent)
@@ -166,4 +181,13 @@ public:
 	//event called when the turn ends
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnTurnEndBP();
-};
+
+
+	//Initiate rewind
+	UFUNCTION(BlueprintCallable)
+	void Rewind();
+	/*
+	UFUNCTION()
+	void DrawBoolPlayerDebugArrows();*/
+};	  
+	  

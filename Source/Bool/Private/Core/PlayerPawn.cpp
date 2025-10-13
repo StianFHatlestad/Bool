@@ -10,6 +10,7 @@
 #include "EnhancedInput/Public/EnhancedInputSubsystems.h"
 #include "Camera/CameraComponent.h"
 #include "Chaos/Particle/ParticleUtilities.h"
+#include "NiagaraComponent.h"
 #include "Components/BoxComponent.h"
 #include "Components/SphereComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -24,9 +25,20 @@ APlayerPawn::APlayerPawn()
 
 	//create the camera component
 	CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComponent"));
+	/*
+	//Create Niagara particle system component for aiming ring and lines
+	NS_AimingLine = CreateDefaultSubobject<UNiagaraComponent>(TEXT("NS_AimingLine"));
+	NS_AimingRing = CreateDefaultSubobject<UNiagaraComponent>(TEXT("NS_AimingRing"));
+	NS_AimingLineBounces = CreateDefaultSubobject<UNiagaraComponent>(TEXT("AimingLineBounces"));
 
 	//setup attachment(s)
 	CameraComponent->SetupAttachment(RootComponent);
+	NS_AimingLine->SetupAttachment(CameraComponent);
+	NS_AimingRing->SetupAttachment(CameraComponent);
+	NS_AimingLineBounces->SetupAttachment(CameraComponent);
+
+	*/
+
 
 	//set the rotation of the camera component
 	CameraComponent->SetRelativeRotation(FRotator(0,-90,0));
@@ -39,6 +51,16 @@ void APlayerPawn::BeginPlay()
 
 	//set the player controller
 	PlayerController = CastChecked<APlayerController>(GetController());
+	//TODO: optimize this, currently does not work
+	//Get the timelord(rewind controller) actor in the level
+	TArray<AActor*> rewindSceneRef;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ATimelord::StaticClass(), rewindSceneRef);
+
+	if (rewindSceneRef.IsEmpty())
+		{
+		//print a debug message
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("No Rewind Controller Found"));
+	}
 
 	//get the cue balls in the level
 	TArray<AActor*> CueBalls;
@@ -63,6 +85,7 @@ void APlayerPawn::BeginPlay()
 	//get the game instance
 	GameInstance = Cast<UBoolGameInstance>(UGameplayStatics::GetGameInstance(this));
 
+		
 	//temporary storage for the ball actors in the level
 	TArray<AActor*> LocBallActors;
 
@@ -88,6 +111,8 @@ void APlayerPawn::Tick(const float DeltaTime)
 {
 	//call the parent implementation
 	Super::Tick(DeltaTime);
+
+	
 
 	//check if we don't have a valid cue ball
 	if (!CueBall->IsValidLowLevelFast())
@@ -164,6 +189,10 @@ void APlayerPawn::Tick(const float DeltaTime)
 		//set turn in progress to false
 		GameInstance->bTurnInProgress = false;
 	}
+
+	
+
+
 }
 
 void APlayerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -176,6 +205,7 @@ void APlayerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	{
 		EnhancedInputComponent->BindAction(IA_Shoot, ETriggerEvent::Triggered, this, &APlayerPawn::ShootCueBall);
 		EnhancedInputComponent->BindAction(IA_ResetAim, ETriggerEvent::Triggered, this, &APlayerPawn::ResetAim);
+		EnhancedInputComponent->BindAction(IA_Rewind, ETriggerEvent::Triggered, this, &APlayerPawn::Rewind); //TODO: remove this and make it a button on UI
 	}
 
 	//check if we have a valid input subsystem
@@ -208,7 +238,7 @@ void APlayerPawn::ShootCueBallAtPosition(FVector NewVelocity) const
 
 	//get the shot strength curve value
 	const float ShotStrengthCurveValue = ShotStrengthCurve->GetFloatValue(FVector::DotProduct(AimToCueBall, NewVelocity.GetSafeNormal()));
-
+	 
 	//get the spin strength curve value
 	const float SpinStrengthCurveValue = SpinStrengthCurve->GetFloatValue(NewVelocity.Length() / GetWorld()->GetDefaultPhysicsVolume()->TerminalVelocity);
 
@@ -292,13 +322,28 @@ bool APlayerPawn::CanShoot() const
 
 void APlayerPawn::LaunchCueBall()
 {
+	///Creates a new objects to contain rewinding data and increases RewindIndex to that entry
+	//Get all the balls on the scene
+	TArray<AActor*> Balls;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABallActor::StaticClass(), Balls);
+
+	for (AActor* BallActor : Balls)
+	{
+		//cast the ball actor to a ball actor
+		const TObjectPtr<ABallActor> Ball = Cast<ABallActor>(BallActor);
+		if (Ball->IsValidLowLevel())
+		{
+			//add a new position and rotation struct to the history
+			Ball->CreateNewEntry();
+		}
+	}
+
 	//get the current shot speed
 	float LocCurrentShotSpeed = FMath::Clamp(FVector::Dist(CueBall->GetActorLocation(), GetMouseWorldPosition()) * ShotSpeedMultiplier, MinimumShootingSpeed, MaxShootingSpeed);
 
 	//shoot the cue ball at the position
 	ShootCueBallAtPosition(FireDir * LocCurrentShotSpeed);
 
-	//set turn in progress to true
 	GameInstance->bTurnInProgress = true;
 
 	//set the next available turn time
@@ -313,6 +358,8 @@ void APlayerPawn::LaunchCueBall()
 
 void APlayerPawn::ShootCueBall(const FInputActionValue& Value)
 {
+
+	
 	//check if the game instance is not valid
 	if (!GameInstance->IsValidLowLevel())
 	{
@@ -340,6 +387,8 @@ void APlayerPawn::ShootCueBall(const FInputActionValue& Value)
 		return;
 	}
 
+	
+
 	//check if we have a valid cue ball
 	if (CueBall->IsValidLowLevelFast())
 	{
@@ -356,8 +405,9 @@ void APlayerPawn::ShootCueBall(const FInputActionValue& Value)
 		//check if the shot delay is less than or equal to zero
 		if (ShotDelay <= 0)
 		{
-			//launch the cue ball immediately
+		//launch the cue ball immediately
 			LaunchCueBall();
+			
 		}
 		else
 		{
@@ -368,6 +418,8 @@ void APlayerPawn::ShootCueBall(const FInputActionValue& Value)
 				LaunchCueBall();
 			}, ShotDelay, false);	
 		}
+
+	
 	}
 }
 
@@ -514,3 +566,61 @@ void APlayerPawn::OnTurnEnd()
 	//call the OnTurnEnd function of the game instance
 	GameInstance->OnTurnEndBP();
 }
+
+void APlayerPawn::Rewind()
+{
+	
+	//check if the game instance is not valid
+	if (!GameInstance->IsValidLowLevel())
+	{
+		//print debug string
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("APlayerPawn::Rewind; Game Instance Not Valid"));
+		//return early to prevent further execution
+		return;
+	}
+	if (GameInstance->bTurnInProgress)
+		return;
+	//Get all the balls on the scene
+	TArray<AActor*> Balls;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABallActor::StaticClass(), Balls);
+
+	for (AActor* BallActor : Balls)
+	{
+		//cast the ball actor to a ball actor
+		const TObjectPtr<ABallActor> Ball = Cast<ABallActor>(BallActor);
+		if (Ball->IsValidLowLevel())
+		{
+			// Switches on rewinding.
+			Ball->TurnOnRewinding();
+		}
+	}
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("rewind initiated"));
+}
+
+/* TODO: finish translation from blueprint to C++ code
+void APlayerPawn::DrawBoolPlayerDebugArrows()
+{
+	FVector3d CueBallLocation = CueBall->GetActorLocation();
+	float ScaledSphereRadius = CueBall->SphereComponent->GetScaledSphereRadius();
+
+	//Get distance between where we are aiming from and cue ball
+	float InitialArrowDrawDist = FVector::Dist(AimLocation,CueBallLocation);
+
+	//Get old Cueball velocity
+	FVector OldCueBallVelocity = CueBall->GetBallVelocity();
+	if (CueBall->IsValidLowLevel())
+	{
+		if (CanShoot())
+		{
+			NS_AimingLine->SetVisibility(true);
+				
+		}
+		else
+		{
+			NS_AimingLine->SetVisibility(false);
+			NS_AimingLineBounces->SetVisibility(false);
+			NS_AimingRing->SetVisibility(false);
+		}
+	}
+}
+*/

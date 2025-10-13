@@ -46,4 +46,3 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnBallScoredBP(ABallActor* BallActor, AGoalActor* GoalActor);
 };
-
