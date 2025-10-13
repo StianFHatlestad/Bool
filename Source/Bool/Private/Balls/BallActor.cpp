@@ -199,7 +199,7 @@ void ABallActor::Tick(const float DeltaTime)
 		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5.f, FColor::White, "reeeeecording");
 	}
 
-	if (IsRewinding && !GameInstance->bTurnInProgress)
+	if (IsRewinding)
 	{
 		RewindToIndex();
 	}
@@ -1401,20 +1401,23 @@ void ABallActor::ErrorResetVelocities(const FString ErrorMessage, const bool bPr
 
 void ABallActor::RewindToIndex()
 {
-	if (!PositionAndRotationHistory.IsValidIndex(rewindIndex))
+	if (PositionAndRotationHistory.IsValidIndex(rewindIndex))
 	{
+		FPositionAndRotationData& Data = PositionAndRotationHistory[rewindIndex];
 		if (!PositionAndRotationHistory[rewindIndex].Positions.IsEmpty())
 		{
-			FPositionAndRotationData& Data = PositionAndRotationHistory[rewindIndex];
-
 			if (Data.Positions.Num() > 0 && Data.Rotations.Num() > 0)
 			{
 				SetActorLocation(Data.popLastPos());
+				SetActorRotation(Data.popLastRot());
 				return;
 			}
 		}
+		
 	}
+	
 	TurnOfRewinding();
+	PositionAndRotationHistory.RemoveAt(rewindIndex);
 	rewindIndex--;
 }
 

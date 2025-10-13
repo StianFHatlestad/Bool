@@ -4,6 +4,9 @@
 #include "Timelord.h"
 
 
+ 
+
+
 ATimelord::ATimelord()
 {
 	// Enable ticking every frame
@@ -50,9 +53,6 @@ void ATimelord::Tick(float DeltaTime)
 			GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5.f, FColor::White, "reeeeecording");
 		}
 	}
-
-	
-
 }
 
 //TODO: implement this porperly in the UI
@@ -89,7 +89,7 @@ void ATimelord::CreateNewEntry()
 void ATimelord::RecordPosAndRot()
 {
 	/// TODO:remove
-}
+} 
 
 void ATimelord::turnOnRewinding()
 {

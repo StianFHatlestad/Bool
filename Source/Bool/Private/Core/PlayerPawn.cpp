@@ -578,6 +578,8 @@ void APlayerPawn::Rewind()
 		//return early to prevent further execution
 		return;
 	}
+	if (GameInstance->bTurnInProgress)
+		return;
 	//Get all the balls on the scene
 	TArray<AActor*> Balls;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABallActor::StaticClass(), Balls);
