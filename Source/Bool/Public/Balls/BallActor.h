@@ -383,7 +383,7 @@ public:
 	/// <summary>
 	/// Tells if the ball is currently rewinding. (Read only variable)
 	/// </summary>
-	UPROPERTY(EditAnywhere, Category = "BoolData|Rewind")
+	UPROPERTY(BlueprintReadOnly)
 	bool IsRewinding{ false };
 
 	/// <summary>

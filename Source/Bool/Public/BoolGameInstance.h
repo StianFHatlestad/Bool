@@ -40,7 +40,7 @@ public:
 
 
 	//Debug comments for rewind mechanic
-	UPROPERTY(BlueprintAssignable)
+	UPROPERTY(EditAnywhere, Category = "BoolData|Rewind")
 	bool bDebugRewind{true};
 	//event called when the turn ends
 	UFUNCTION(BlueprintImplementableEvent)
