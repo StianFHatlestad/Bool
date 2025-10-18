@@ -38,10 +38,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bTurnInProgress = false;
 
-
-	//Debug comments for rewind mechanic
-	UPROPERTY(EditAnywhere, Category = "BoolData|Rewind")
-	bool bDebugRewind{true};
 	//event called when the turn ends
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnTurnEndBP();

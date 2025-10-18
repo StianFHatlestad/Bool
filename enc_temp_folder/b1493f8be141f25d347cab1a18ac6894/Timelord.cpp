@@ -4,6 +4,9 @@
 #include "Timelord.h"
 
 
+ 
+
+
 ATimelord::ATimelord()
 {
 	// Enable ticking every frame

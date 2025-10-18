@@ -561,8 +561,7 @@ void APlayerPawn::Rewind()
 {
 	//check if the game instance is not valid
 	if (!GameInstance->IsValidLowLevel())
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("APlayerPawn::Rewind; Game Instance Not Valid"));
-
+		UE_LOG(LogTemp, Warning, TEXT("APlayerPawn::Rewind; Game Instance Not Valid"));
 	//exit if a turn is still in progress
 	if (GameInstance->bTurnInProgress)
 		return;
@@ -570,8 +569,6 @@ void APlayerPawn::Rewind()
 	//Get all the balls on the scene
 	TArray<AActor*> Balls;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABallActor::StaticClass(), Balls);
-	if ( GameInstance->bDebugRewind)
-		 GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("rewind initiated"));
 	for (AActor* BallActor : Balls)
 	{	//cast the ball actor to a ball actor
 		const TObjectPtr<ABallActor> Ball = Cast<ABallActor>(BallActor);

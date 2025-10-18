@@ -196,8 +196,6 @@ void ABallActor::Tick(const float DeltaTime)
 	if (IsRecording)
 	{
 		RecordBallPositionAndRotation();
-		if (GameInstance->bDebugRewind)
-			GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5.f, FColor::White, "reeeeecording");
 	}
 
 	if (IsRewinding)
@@ -1445,8 +1443,7 @@ void ABallActor::CreateNewEntry()
 	rewindIndex++;
 
 	PositionAndRotationHistory.Add(FPositionAndRotationData{});
-	if (GameInstance->bDebugRewind)
-		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5.f, FColor::Green, "New entry added ");
+	UE_LOG(LogTemp,Display,TEXT("New rewind entry created on ball actor"))
 }
 
 
