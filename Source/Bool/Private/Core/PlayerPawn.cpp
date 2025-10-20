@@ -50,17 +50,7 @@ void APlayerPawn::BeginPlay()
 	Super::BeginPlay();
 
 	//set the player controller
-	PlayerController = CastChecked<APlayerController>(GetController());
-	//TODO: optimize this, currently does not work
-	//Get the timelord(rewind controller) actor in the level
-	TArray<AActor*> rewindSceneRef;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ATimelord::StaticClass(), rewindSceneRef);
-
-	if (rewindSceneRef.IsEmpty())
-		{
-		//print a debug message
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("No Rewind Controller Found"));
-	}
+	PlayerController = CastChecked<APlayerController>(GetController()); 
 
 	//get the cue balls in the level
 	TArray<AActor*> CueBalls;
@@ -322,21 +312,6 @@ bool APlayerPawn::CanShoot() const
 
 void APlayerPawn::LaunchCueBall()
 {
-	///Creates a new objects to contain rewinding data and increases RewindIndex to that entry
-	//Get all the balls on the scene
-	TArray<AActor*> Balls;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABallActor::StaticClass(), Balls);
-
-	for (AActor* BallActor : Balls)
-	{
-		//cast the ball actor to a ball actor
-		const TObjectPtr<ABallActor> Ball = Cast<ABallActor>(BallActor);
-		if (Ball->IsValidLowLevel())
-		{
-			//add a new position and rotation struct to the history
-			Ball->CreateNewEntry();
-		}
-	}
 
 	//get the current shot speed
 	float LocCurrentShotSpeed = FMath::Clamp(FVector::Dist(CueBall->GetActorLocation(), GetMouseWorldPosition()) * ShotSpeedMultiplier, MinimumShootingSpeed, MaxShootingSpeed);
@@ -420,6 +395,21 @@ void APlayerPawn::ShootCueBall(const FInputActionValue& Value)
 		}
 
 	
+	}
+	///Creates a new objects to contain rewinding data and increases RewindIndex to that entry
+//Get all the balls on the scene
+	TArray<AActor*> Balls;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABallActor::StaticClass(), Balls);
+
+	for (AActor* BallActor : Balls)
+	{
+		//cast the ball actor to a ball actor
+		const TObjectPtr<ABallActor> Ball = Cast<ABallActor>(BallActor);
+		if (Ball->IsValidLowLevel())
+		{
+			//add a new position and rotation struct to the history
+			Ball->CreateNewEntry();
+		}
 	}
 }
 
@@ -569,32 +559,24 @@ void APlayerPawn::OnTurnEnd()
 
 void APlayerPawn::Rewind()
 {
-	
 	//check if the game instance is not valid
 	if (!GameInstance->IsValidLowLevel())
-	{
-		//print debug string
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("APlayerPawn::Rewind; Game Instance Not Valid"));
-		//return early to prevent further execution
-		return;
-	}
+		UE_LOG(LogTemp, Warning, TEXT("APlayerPawn::Rewind; Game Instance Not Valid"));
+	//exit if a turn is still in progress
 	if (GameInstance->bTurnInProgress)
 		return;
+
 	//Get all the balls on the scene
 	TArray<AActor*> Balls;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABallActor::StaticClass(), Balls);
-
 	for (AActor* BallActor : Balls)
-	{
-		//cast the ball actor to a ball actor
+	{	//cast the ball actor to a ball actor
 		const TObjectPtr<ABallActor> Ball = Cast<ABallActor>(BallActor);
 		if (Ball->IsValidLowLevel())
-		{
-			// Switches on rewinding.
+		{// Switches on rewinding.
 			Ball->TurnOnRewinding();
 		}
 	}
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("rewind initiated"));
 }
 
 /* TODO: finish translation from blueprint to C++ code
