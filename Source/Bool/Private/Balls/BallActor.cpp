@@ -17,7 +17,7 @@
 
 ABallActor::ABallActor()
 {
-	//enable ticking
+	//enableing tick
 	PrimaryActorTick.bCanEverTick = true;
 
 	//create the component(s)
@@ -175,6 +175,33 @@ void ABallActor::Tick(const float DeltaTime)
 		OldPositions.RemoveAt(0);
 	}
 
+	/*
+	if (PhysicsState != Ebps_Stationary && PositionAndRotationHistory.Num() > 0 )
+	{
+		//add the current position and rotation to the last position and rotation struct
+		PositionAndRotationHistory.Last().AddPositionAndRotation(GetActorLocation(), GetActorRotation());
+	}
+	*/
+
+	/*************************  Rewind Logic **************************************/
+	if (GameInstance->bTurnInProgress)
+	{
+		TurnOnRecording();
+	}else
+	{
+		TurnOfRecording();
+	}
+
+
+	if (IsRecording)
+	{
+		RecordBallPositionAndRotation();
+	}
+
+	if (IsRewinding)
+	{
+		RewindToIndex();
+	}
 }
 
 FVector ABallActor::GetBallAngularVelocityVec() const
@@ -319,10 +346,9 @@ void ABallActor::SetBoolPhysicsState(const TEnumAsByte<EBallPhysicsState> NewPhy
 		return;
 	}
 
-	//set the new bool physics state
 	PhysicsState = NewPhysicsState;
 }
-
+ 
 bool ABallActor::IsOutsideTable() const
 {
 	return !UKismetMathLibrary::IsPointInBox(GetActorLocation(), BoxPosition, BoxSize);
@@ -1366,11 +1392,60 @@ void ABallActor::ErrorResetVelocities(const FString ErrorMessage, const bool bPr
 	}
 
 	//set our velocity to zero
-	SetBallVelocity(FVector::ZeroVector);
+	SetBallVelocity(FVector::ZeroVector); 
 
 	//set our angular velocity to zero
 	SetBallAngularVelocity(FRotator::ZeroRotator);
 }
+
+void ABallActor::RewindToIndex()
+{
+	if (PositionAndRotationHistory.IsValidIndex(rewindIndex))
+	{
+		FPositionAndRotationData& Data = PositionAndRotationHistory[rewindIndex];
+		if (!PositionAndRotationHistory[rewindIndex].Positions.IsEmpty())
+		{
+			if (Data.Positions.Num() > 0 && Data.Rotations.Num() > 0)
+			{
+				SetActorLocation(Data.popLastPos());
+				SetActorRotation(Data.popLastRot());
+				return;
+			}
+		}
+		
+	}
+	
+	TurnOfRewinding();
+	PositionAndRotationHistory.RemoveAt(rewindIndex);
+	rewindIndex--;
+}
+
+void ABallActor::RecordBallPosition()
+{
+	if (PositionAndRotationHistory.Num() > 0)
+		PositionAndRotationHistory.Last().AddNewPosition(GetActorLocation());
+}
+
+void ABallActor::RecordBallRotation()
+{
+	if (PositionAndRotationHistory.Num() > 0)
+		PositionAndRotationHistory.Last().AddNewRotation(GetActorRotation());
+}
+
+void ABallActor::RecordBallPositionAndRotation()
+{
+	RecordBallPosition();
+	RecordBallRotation();
+}
+
+void ABallActor::CreateNewEntry()
+{
+	rewindIndex++;
+
+	PositionAndRotationHistory.Add(FPositionAndRotationData{});
+	UE_LOG(LogTemp,Display,TEXT("New rewind entry created on ball actor"))
+}
+
 
 //FString ABallActor::GetPhysicsStateAsString(EBallPhysicsState InPhysicsState) const
 //{
@@ -1404,4 +1479,3 @@ void ABallActor::ErrorResetVelocities(const FString ErrorMessage, const bool bPr
 //		}
 //	}
 //}
-
