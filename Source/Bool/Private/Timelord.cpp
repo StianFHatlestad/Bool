@@ -9,7 +9,6 @@ ATimelord::ATimelord()
 	// Enable ticking every frame
 	PrimaryActorTick.bCanEverTick = true;
 
-	
 }
 
 ATimelord::~ATimelord()

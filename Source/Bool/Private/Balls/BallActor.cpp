@@ -1002,7 +1002,7 @@ bool ABallActor::ProcessHit(const FHitResult& HitResult, AActor* OtherActor)
 		}
 
 		//call the game instance's OnBallGoal function
-		GameInstance->OnBallScoredBP(this, GoalActor);
+		//GameInstance->OnBallScoredBP(this, GoalActor);
 
 		//return early to prevent further execution
 		return true;
@@ -1402,15 +1402,28 @@ void ABallActor::RewindToIndex()
 {
 	if (PositionAndRotationHistory.IsValidIndex(rewindIndex))
 	{
-		FPositionAndRotationData& Data = PositionAndRotationHistory[rewindIndex];
-		if (!PositionAndRotationHistory[rewindIndex].Positions.IsEmpty())
+		if (true) // if ball is hidden.
 		{
-			if (Data.Positions.Num() > 0 && Data.Rotations.Num() > 0)
+			//turn it on
+		
+			FPositionAndRotationData& Data = PositionAndRotationHistory[rewindIndex];
+			if (!PositionAndRotationHistory[rewindIndex].Positions.IsEmpty())
 			{
-				SetActorLocation(Data.popLastPos());
-				SetActorRotation(Data.popLastRot());
-				return;
+				if (Data.Positions.Num() > 0)
+				{
+					SetActorLocation(Data.popLastPos());
+					
+					
+				}
 			}
+			if (!PositionAndRotationHistory[rewindIndex].Rotations.IsEmpty())
+			{
+				if (Data.Rotations.Num() > 0)
+				{
+					SetActorRotation(Data.popLastRot());
+				}
+			}
+			return;
 		}
 		
 	}

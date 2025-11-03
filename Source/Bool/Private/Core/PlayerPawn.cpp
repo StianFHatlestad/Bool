@@ -490,7 +490,7 @@ bool APlayerPawn::HandleBallInGoal(AGoalActor* Goal, AActor* BallActor)
 		}
 
 		//destroy the ball actor
-		Ball->Destroy();
+		//Ball->Destroy();
 	}
 	else
 	{
@@ -567,13 +567,14 @@ void APlayerPawn::Rewind()
 		return;
 
 	//Get all the balls on the scene
-	TArray<AActor*> Balls;
+	TArray<AActor*> Balls; 
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABallActor::StaticClass(), Balls);
 	for (AActor* BallActor : Balls)
 	{	//cast the ball actor to a ball actor
 		const TObjectPtr<ABallActor> Ball = Cast<ABallActor>(BallActor);
 		if (Ball->IsValidLowLevel())
-		{// Switches on rewinding.
+		{
+			// Switches on rewinding.
 			Ball->TurnOnRewinding();
 		}
 	}

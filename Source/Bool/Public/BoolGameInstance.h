@@ -27,7 +27,7 @@ public:
 	int PlayerGold = 0;
 
 	//the next time a turn can be performed
-	UPROPERTY(BlueprintReadOnly, Category="BoolData|Turns/Rounds")
+	UPROPERTY(BlueprintReadOnly, Category="BoolData|Turns/Ro unds")
 	float AvailableTurnTime = 0;
 
 	//the current turn
@@ -43,6 +43,6 @@ public:
 	void OnTurnEndBP();
 
 	//event called when a ball is scored
-	UFUNCTION(BlueprintImplementableEvent)
-	void OnBallScoredBP(ABallActor* BallActor, AGoalActor* GoalActor);
+	//UFUNCTION(BlueprintImplementableEvent)
+	//void OnBallScoredBP(ABallActor* BallActor, AGoalActor* GoalActor);
 };
