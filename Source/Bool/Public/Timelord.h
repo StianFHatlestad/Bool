@@ -72,4 +72,10 @@ public:
 	UPROPERTY()
 	TObjectPtr<UBoolGameInstance> GameInstance = nullptr;
 
+	/**
+	 * Array containing all ball actors that has been scored during the round
+	 */
+	UPROPERTY(BlueprintReadOnly)
+	TArray<TObjectPtr<ABallActor>> ScoredBallActors;
+
 };

@@ -66,7 +66,7 @@ void AGoalActor::OnBoxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AAc
 		else
 		{
 			//call the player pawns handle ball in goal function
-			PlayerPawn->HandleBallInGoal(this, BallActor);
+			//PlayerPawn->HandleBallInGoal(this, BallActor);
 		}
 	}
 }

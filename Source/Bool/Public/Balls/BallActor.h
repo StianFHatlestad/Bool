@@ -57,24 +57,26 @@ struct FPositionAndRotationData {
 
 	//returns the last position and removes it from the array
 	FVector popLastPos() {
+		FVector LastPos;
 		if (Positions.Num() > 0)
 		{
-			FVector LastPos = Positions.Last();
+			LastPos = Positions.Last();
 			Positions.RemoveAt(Positions.Num() - 1);
 			return LastPos;
 		}
-		return FVector::ZeroVector;
+		return LastPos;
 	}
 
 	//Returns the last rotation and removes it from the array
 	FRotator popLastRot() {
+		FRotator LastRot;
 		if (Rotations.Num() > 0)
 		{
-			FRotator LastRot = Rotations.Last();
+			LastRot = Rotations.Last();
 			Rotations.RemoveAt(Rotations.Num() - 1);
 			return LastRot;
 		}
-		return FRotator::ZeroRotator;
+		return LastRot;
 	}
 };
 
@@ -376,7 +378,7 @@ public:
 	void ErrorResetVelocities(FString ErrorMessage = "", bool bPrintCallStack = false);
 
 													//#############  Rewind logic ###############################
-		//Container for position and rotation data for rewinding
+	//Container for position and rotation data for rewinding
 	UPROPERTY(BlueprintReadWrite, Category = "BoolData|Rewind")
 	TArray<FPositionAndRotationData> PositionAndRotationHistory;
 
@@ -391,7 +393,7 @@ public:
 	/// </summary>
 	UPROPERTY(BlueprintReadOnly)
 	bool IsRecording{ false };
-
+	 
 
 	//What index in the history to draw from when rewinding
 	UPROPERTY(BlueprintReadOnly)
