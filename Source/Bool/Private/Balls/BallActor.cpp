@@ -1402,35 +1402,29 @@ void ABallActor::RewindToIndex()
 {
 	if (PositionAndRotationHistory.IsValidIndex(rewindIndex))
 	{
+		FPositionAndRotationData& Data = PositionAndRotationHistory[rewindIndex];
+		
 		if (true) // if ball is hidden.
 		{
 			//turn it on
-		
-			FPositionAndRotationData& Data = PositionAndRotationHistory[rewindIndex];
-			if (!PositionAndRotationHistory[rewindIndex].Positions.IsEmpty())
-			{
-				if (Data.Positions.Num() > 0)
-				{
-					SetActorLocation(Data.popLastPos());
-					
-					
-				}
-			}
-			if (!PositionAndRotationHistory[rewindIndex].Rotations.IsEmpty())
-			{
-				if (Data.Rotations.Num() > 0)
-				{
-					SetActorRotation(Data.popLastRot());
-				}
-			}
-			return;
+		}
+		if (Data.Rotations.Num() <= 0 && Data.Rotations.Num() <= 0)
+		{
+			PositionAndRotationHistory.RemoveAt(rewindIndex);
+			rewindIndex -= 1;
+			TurnOfRewinding();
 		}
 		
+		if (Data.Positions.Num() > 0)
+		{
+			SetActorLocation(Data.Positions.Pop());
+		}
+
+		if (Data.Rotations.Num() > 0)
+		{
+			SetActorRotation(Data.Rotations.Pop());
+		}
 	}
-	
-	TurnOfRewinding();
-	PositionAndRotationHistory.RemoveAt(rewindIndex);
-	rewindIndex--;
 }
 
 void ABallActor::RecordBallPosition()
