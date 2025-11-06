@@ -1400,6 +1400,10 @@ void ABallActor::ErrorResetVelocities(const FString ErrorMessage, const bool bPr
 
 void ABallActor::RewindToIndex()
 {
+	/*only run if we have rewinds avaliable
+	if (totalRewinds = 0)
+		return;
+	*/
 	if (PositionAndRotationHistory.IsValidIndex(rewindIndex))
 	{
 		FPositionAndRotationData& Data = PositionAndRotationHistory[rewindIndex];
@@ -1412,6 +1416,7 @@ void ABallActor::RewindToIndex()
 		{
 			PositionAndRotationHistory.RemoveAt(rewindIndex);
 			rewindIndex -= 1;
+			// totalRewinds -= 1
 			TurnOfRewinding();
 		}
 		
