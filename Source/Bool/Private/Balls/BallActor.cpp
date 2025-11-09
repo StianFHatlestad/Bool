@@ -1452,6 +1452,7 @@ void ABallActor::RecordBallPositionAndRotation()
 
 void ABallActor::CreateNewEntry()
 {
+	
 	rewindIndex++;
 
 	PositionAndRotationHistory.Add(FPositionAndRotationData{});

@@ -12,7 +12,15 @@
 
 class UBoolGameInstance;
 
-
+USTRUCT()
+struct FOldScore
+{
+	GENERATED_BODY()
+	int stikes;
+	int strikes;
+	int points;
+	FOldScore(int oldstikes, int oldstrikes, int oldpoints) : stikes(oldstikes), strikes(oldstrikes), points(oldpoints) {};
+};
 /**
  * 
  */
@@ -71,6 +79,14 @@ public:
 	// Reference to the game instance
 	UPROPERTY()
 	TObjectPtr<UBoolGameInstance> GameInstance = nullptr;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Rewind Settings")
+	bool ToogleRewindOn = true;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Rewind Settings")
+	bool UnlockedRewind{ true };
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Rewind Settings")
+	int RewindsAvaliable{ 2 };
 
 	/**
 	 * Array containing all ball actors that has been scored during the round
