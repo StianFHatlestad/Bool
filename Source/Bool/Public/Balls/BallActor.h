@@ -86,7 +86,11 @@ class BOOL_API ABallActor : public AActor
 	GENERATED_BODY()
 	
 public:
-	
+	//Container that holds reference to neighboring balls(At breako of balls)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TArray<ABallActor*> neighbors;
+	UPROPERTY()
+	bool hasFoundNeighbors{false};
 
 	//sphere component for the cue ball
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
@@ -297,6 +301,9 @@ public:
 	//overrides(s)
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
+	virtual void NotifyActorBeginCursorOver() override;
+	virtual void NotifyActorEndCursorOver() override;
+
 
 	////function to check if the state of the ball should be updated
 	//UFUNCTION(BlueprintCallable)
@@ -477,3 +484,16 @@ public:
 	
 };
 
+inline void ABallActor::NotifyActorBeginCursorOver()
+{
+	Super::NotifyActorBeginCursorOver();
+	for (auto neighbor : neighbors)
+		neighbor->SetActorLocation(neighbor->GetActorLocation() + FVector(0, 0, 30)); 
+}
+
+inline void ABallActor::NotifyActorEndCursorOver()
+{
+	Super::NotifyActorEndCursorOver();
+	for (auto neighbor : neighbors)
+		neighbor->SetActorLocation(neighbor->GetActorLocation() - FVector(0, 0, 30)); 
+}

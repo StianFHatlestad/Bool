@@ -19,6 +19,7 @@ struct FOldScore
 	int stikes;
 	int strikes;
 	int points;
+	FOldScore() = default;
 	FOldScore(int oldstikes, int oldstrikes, int oldpoints) : stikes(oldstikes), strikes(oldstrikes), points(oldpoints) {};
 };
 /**

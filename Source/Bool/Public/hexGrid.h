@@ -11,7 +11,8 @@ class BOOL_API AhexGrid : public AActor
 {
 	GENERATED_BODY()
 private:
-	UStaticMesh gridMesh;
+	UPROPERTY()
+	UStaticMesh* gridMesh;
 	UPROPERTY(EditAnywhere)
 	int width{ 5 };
 	UPROPERTY(EditAnywhere)

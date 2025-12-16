@@ -138,6 +138,34 @@ void ABallActor::Tick(const float DeltaTime)
 
 		//perform the movement
 		PhysicsSolver->PerformMovement(this, DeltaTime);
+		if (!hasFoundNeighbors)
+		{
+			hasFoundNeighbors = true;
+			//Find our nearest neighbours
+			//Find all the ball actors
+			TArray<AActor*> FoundNeighbours;
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AActor::StaticClass(), FoundNeighbours);
+
+			//Get all the neigbhboring balls
+			for (AActor* neighbour : FoundNeighbours)
+			{
+				//Skip self
+				if (neighbour->GetActorLocation() == GetActorLocation())
+					continue;
+		
+				//Check if this balls sphere collider is valid. We only need one since we are comparing to identical objects in terms of sizing
+				if (SphereComponent->IsValidLowLevelFast())
+				{
+					//Search radius is radius of collision sphere * 3, that should be no more than one ball away in any direction(+ some wiggle room)
+					float searchRadius = SphereComponent->GetScaledSphereRadius() * 3;
+					float distBetweenThisballAndTheOther = (neighbour->GetActorLocation() - GetActorLocation()).Size();
+					if ( distBetweenThisballAndTheOther < searchRadius )
+					{
+						neighbors.Add(Cast<ABallActor>(neighbour));
+					}
+				}
+			}	
+		}
 	}
 
 	//check if we're outside the table
