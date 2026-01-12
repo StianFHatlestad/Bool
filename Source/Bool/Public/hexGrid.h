@@ -4,29 +4,33 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Components/HierarchicalInstancedStaticMeshComponent.h"
 #include "hexGrid.generated.h"
 
 UCLASS()
 class BOOL_API AhexGrid : public AActor
 {
 	GENERATED_BODY()
-private:
-	UPROPERTY()
-	UStaticMesh* gridMesh;
-	UPROPERTY(EditAnywhere)
-	int width{ 5 };
-	UPROPERTY(EditAnywhere)
-	int height{ 5 };
+	
 public:	
 	// Sets default values for this actor's properties
 	AhexGrid();
-
-protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-
+	
+private:
+	void generateHexGrid();
+	FVector AxialToWorld(int32 q, int32 r);
 public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
+	
+	UPROPERTY(VisibleAnywhere, Category="Hex")
+	TObjectPtr<UHierarchicalInstancedStaticMeshComponent> HSIM;
+	UPROPERTY(EditAnywhere, Category="Hex")
+	UStaticMesh* tileMesh;
+	UPROPERTY(EditAnywhere, Category="Hex", meta=(ClampMin="1"))
+	int32 rows{ 5 };
+	UPROPERTY(EditAnywhere, Category = "Hex", meta=(ClampMin="1"))
+	int32 columns{ 5 };
+	UPROPERTY(EditAnywhere, Category="Hex", meta=(ClampMin="1.0"))
+	float HexSize = 100.f;
+	
+	virtual void OnConstruction(const FTransform& Transform) override;
 };
