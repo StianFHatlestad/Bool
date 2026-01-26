@@ -3,20 +3,23 @@
 
 #include "HexTile.h"
 
+#include "Balls/BallActor.h"
+
 // Sets default values
 AHexTile::AHexTile()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
-	
+	USceneComponent* sceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("SceneComponent"));
+	RootComponent = sceneComponent;
 	SphereCollider = CreateDefaultSubobject<USphereComponent>(TEXT("SphereCollider"));
-	RootComponent = SphereCollider;
-	SphereCollider->InitSphereRadius(1.0f);
+	SphereCollider->InitSphereRadius(100.0f);
 	SphereCollider->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	SphereCollider->SetGenerateOverlapEvents(true);
+	SphereCollider->SetupAttachment(RootComponent);
 	
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
-	StaticMesh->SetupAttachment(SphereCollider);
+	StaticMesh->SetupAttachment(RootComponent);
 	
 	StaticMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	SphereCollider->OnComponentBeginOverlap.AddDynamic(this, &AHexTile::OnOverlapBegin);
@@ -27,7 +30,11 @@ void AHexTile::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* Other
 {
 	if (OtherActor && OtherActor != this)
 	{
-		
+		AActor* actor = static_cast<AActor*>(OtherActor);
+		if (actor != nullptr && ballOnTile == nullptr )
+		{
+			ballOnTile = actor;
+		}
 	}
 }
 

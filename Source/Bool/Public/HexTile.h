@@ -21,11 +21,16 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Hextile")
 	UStaticMeshComponent* StaticMesh;
 	
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, Category = "Collision")
 	USphereComponent* SphereCollider;
 	UPROPERTY(EditAnywhere, Category = "Hextile")
 	TArray<AHexTile*> neighbours;
 	
+	//Ref to ball on the tile
+	TObjectPtr<AActor> ballOnTile;
+	//NOTES: Incovation upgrades, maybe this should be a dataset or something?
+	UPROPERTY(EditAnywhere, Category = "Invocation")
+	float score{10};
 	
 		 
 	UFUNCTION()
